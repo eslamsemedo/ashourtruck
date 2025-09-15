@@ -32,9 +32,15 @@ async function getProduct(id: string, lang: "en" | "ar" = "en"): Promise<Product
   };
 }
 
-export default async function Page({ params, searchParams }: { params: { id: string }, searchParams: Record<string,string|undefined> }) {
-  const lang = (searchParams.lang === "ar" ? "ar" : "en") as "en" | "ar";
-  const product = await getProduct(params.id, lang);
+type Props = {
+  params: { id: string };
+  searchParams?: { lang: string };
+};
+  export default async function Page({ params, searchParams }: Props) {
+    const { id } = await params;
+    const { lang } = await searchParams ?? { lang: "en" };
+    const lange = (lang === "ar" ? "ar" : "en") as "en" | "ar";
+  const product = await getProduct(id, lange);
 
   if (!product) {
     return (
