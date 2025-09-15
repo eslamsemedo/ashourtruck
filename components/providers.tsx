@@ -6,11 +6,18 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/app/state/store';
+import { usePathname } from 'next/navigation';
+import Header from './header';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  console.log(pathname);
+  const isAdmin = pathname.startsWith("/admin");
+
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
+        {!isAdmin && <Header />}
         {children}
       </PersistGate>
     </Provider>

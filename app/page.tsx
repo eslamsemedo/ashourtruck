@@ -25,7 +25,6 @@ export default function Home() {
       <BenefitsStrip />
       <PromotionsGrid />
        */}
-
       <Hero />
       <div id="featured-categories">
 
