@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Mail, ShieldCheck, Gift, BellRing } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 // Newsletter Signup (with perks)
 // Theme: pure black background, white text, red accents
@@ -15,10 +16,11 @@ type Props = {
 };
 
 export default function NewsletterSignup({
-  headline = "Join the RPM Club",
-  tagline = "Get 10% off your first order + exclusive deals",
+  headline = "newsletterHeadline",
+  tagline = "newsletterTagline",
   onSubmitEmail,
 }: Props) {
+  const { t } = useT();
   const [email, setEmail] = React.useState("");
   const [status, setStatus] = React.useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = React.useState<string>("");
@@ -30,7 +32,7 @@ export default function NewsletterSignup({
     e.preventDefault();
     setError("");
     if (!validate(email)) {
-      setError("Please enter a valid email address.");
+      setError(t('invalidEmail'));
       return;
     }
     try {
@@ -63,10 +65,10 @@ export default function NewsletterSignup({
           className="text-center"
         >
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur">
-            <BellRing className="h-3.5 w-3.5 text-red-500" /> Stay in the loop
+            <BellRing className="h-3.5 w-3.5 text-red-500" /> {t('stayInLoop')}
           </div>
-          <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">{headline}</h2>
-          <p className="mt-2 text-white/70">{tagline}</p>
+          <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">{t(headline as any)}</h2>
+          <p className="mt-2 text-white/70">{t(tagline as any)}</p>
         </motion.div>
 
         {/* Form Card */}
@@ -80,7 +82,7 @@ export default function NewsletterSignup({
           {status !== "success" ? (
             <form onSubmit={handleSubmit} className="grid grid-cols-1 items-center gap-4 sm:grid-cols-5">
               <label htmlFor="email" className="sr-only">
-                Email address
+                {t('emailAddress')}
               </label>
               <div className="sm:col-span-3">
                 <div className="relative">
@@ -91,7 +93,7 @@ export default function NewsletterSignup({
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={t('emailPlaceholder')}
                     className="w-full rounded-2xl border border-white/15 bg-black/60 py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/30 focus:ring-2 focus:ring-red-500/60"
                   />
                 </div>
@@ -107,11 +109,11 @@ export default function NewsletterSignup({
                   {status === "loading" ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                      Subscribing…
+                      {t('subscribing')}
                     </span>
                   ) : (
                     <>
-                      <span>Get my 10% off</span>
+                      <span>{t('getMyDiscount')}</span>
                     </>
                   )}
                 </button>
@@ -120,26 +122,26 @@ export default function NewsletterSignup({
               {/* perks */}
               <div className="sm:col-span-5">
                 <ul className="mt-2 grid grid-cols-1 gap-2 text-xs text-white/70 sm:grid-cols-3">
-                  <li className="inline-flex items-center gap-2"><Gift className="h-4 w-4 text-red-500" /> Exclusive deals & early access</li>
-                  <li className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-red-500" /> Tips from pro tuners</li>
-                  <li className="inline-flex items-center gap-2"><Mail className="h-4 w-4 text-red-500" /> No spam — unsubscribe anytime</li>
+                  <li className="inline-flex items-center gap-2"><Gift className="h-4 w-4 text-red-500" /> {t('perkExclusiveDeals')}</li>
+                  <li className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-red-500" /> {t('perkProTips')}</li>
+                  <li className="inline-flex items-center gap-2"><Mail className="h-4 w-4 text-red-500" /> {t('perkNoSpam')}</li>
                 </ul>
               </div>
             </form>
           ) : (
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
-                <ShieldCheck className="h-3.5 w-3.5 text-red-500" /> You're in
+                <ShieldCheck className="h-3.5 w-3.5 text-red-500" /> {t('youAreIn')}
               </div>
-              <h3 className="text-xl font-bold">Welcome to the RPM Club</h3>
+              <h3 className="text-xl font-bold">{t('welcomeToClub')}</h3>
               <p className="max-w-xl text-sm text-white/70">
-                Check your inbox for a confirmation email. Your one‑time 10% code will arrive shortly.
+                {t('checkInboxMsg')}
               </p>
               <button
                 onClick={() => setStatus("idle")}
                 className="mt-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:border-white/25 hover:bg-white/10"
               >
-                Subscribe another email
+                {t('subscribeAnother')}
               </button>
             </div>
           )}
@@ -147,7 +149,7 @@ export default function NewsletterSignup({
 
         {/* compliance note */}
         <p className="mx-auto mt-4 max-w-4xl text-center text-[11px] leading-relaxed text-white/50">
-          By subscribing, you agree to receive marketing emails from us. You can unsubscribe anytime. We respect your privacy and never share your data.
+          {t('marketingConsent')}
         </p>
       </div>
     </section>

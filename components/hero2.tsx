@@ -2,6 +2,7 @@
 import React from "react";
 import { motion, AnimatePresence, type Variants, type MotionProps } from "framer-motion";
 import { ArrowRight, ShieldCheck, Truck, Sparkles } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 // Hero section for a car accessory e-commerce website
 // Colors: Black (base), White (text), Red (accents)
@@ -44,6 +45,7 @@ const shine: Variants = {
 };
 
 export default function Hero() {
+  const { t } = useT();
   return (
     <section className="relative min-h-[92vh] w-full overflow-hidden bg-black text-white">
       {/* Background accents */}
@@ -83,20 +85,19 @@ export default function Hero() {
         >
           <motion.div variants={item} className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs backdrop-blur">
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
-            <span className="text-white/80">New Season • Performance Upgrades</span>
+            <span className="text-white/80">{t('newSeason')}</span>
           </motion.div>
 
           <motion.h1
             variants={item}
             className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl"
           >
-            Elevate Your <span className="text-red-500">Drive</span> with
-            <br className="hidden sm:block" /> Premium Car Accessories
+            {t('heroHeadlinePart1')} <span className="text-red-500">{t('heroHeadlinePart2')}</span> {t('heroHeadlinePart3')}
+            <br className="hidden sm:block" /> {t('heroHeadlinePart4')}
           </motion.h1>
 
           <motion.p variants={item} className="mt-5 max-w-xl text-white/70">
-            From aero kits to smart lighting — discover curated parts built for precision,
-            style, and speed. Engineered to fit. Designed to thrill.
+            {t('heroDesc')}
           </motion.p>
 
           <motion.div variants={item} className="mt-8 flex flex-wrap items-center gap-4">
@@ -107,7 +108,7 @@ export default function Hero() {
               href="#shop"
               className="group relative inline-flex items-center justify-center rounded-2xl bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/30 outline-none transition hover:bg-red-500 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
             >
-              <span>Shop now</span>
+              <span>{t('shopNow')}</span>
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-0.5" />
               <motion.span
                 variants={shine}
@@ -119,20 +120,20 @@ export default function Hero() {
               href="#categories"
               className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-base font-semibold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10"
             >
-              Explore categories
+              {t('exploreCategories')}
             </a>
           </motion.div>
 
           {/* Trust badges */}
           <motion.ul variants={item} className="mt-10 grid grid-cols-1 gap-3 text-sm text-white/70 sm:grid-cols-3">
             <li className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-              <ShieldCheck className="h-5 w-5 text-red-500" /> 2-year warranty
+              <ShieldCheck className="h-5 w-5 text-red-500" /> {t('warranty2y')}
             </li>
             <li className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-              <Truck className="h-5 w-5 text-red-500" /> Free fast shipping
+              <Truck className="h-5 w-5 text-red-500" /> {t('freeFastShipping')}
             </li>
             <li className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-              <Sparkles className="h-5 w-5 text-red-500" /> Easy returns
+              <Sparkles className="h-5 w-5 text-red-500" /> {t('easyReturns')}
             </li>
           </motion.ul>
         </motion.div>
@@ -148,10 +149,10 @@ export default function Hero() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold">Track-Ready Bundle</h3>
-                <p className="mt-1 text-sm text-white/60">Save up to 25% on curated kits</p>
+                <h3 className="text-xl font-bold">{t('trackReadyBundle')}</h3>
+                <p className="mt-1 text-sm text-white/60">{t('saveUpTo25')}</p>
               </div>
-              <span className="rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold">Hot</span>
+              <span className="rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold">{t('hot')}</span>
             </div>
 
             {/* Mock product image area */}
@@ -182,19 +183,19 @@ export default function Hero() {
                   {...float(0)}
                   className="absolute left-2 top-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 backdrop-blur"
                 >
-                  <span className="h-2 w-2 rounded-full bg-red-500" /> LED Headlights
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> {t('ledHeadlights')}
                 </motion.div>
                 <motion.div
                   {...float(1)}
                   className="absolute right-4 top-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 backdrop-blur"
                 >
-                  <span className="h-2 w-2 rounded-full bg-red-500" /> Performance Exhaust
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> {t('performanceExhaust')}
                 </motion.div>
                 <motion.div
                   {...float(0.5)}
                   className="absolute left-1/2 top-14 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 backdrop-blur"
                 >
-                  <span className="h-2 w-2 rounded-full bg-red-500" /> Sport Rims
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> {t('sportRims')}
                 </motion.div>
               </motion.div>
             </AnimatePresence>
@@ -212,10 +213,10 @@ export default function Hero() {
           className="overflow-hidden rounded-xl border border-white/10"
         >
           <div className="flex items-center justify-between gap-4 bg-white/5 px-4 py-3 text-xs text-white/70 backdrop-blur sm:text-sm">
-            <span>Over <b className="text-white">200,000</b> happy drivers</span>
-            <span className="hidden sm:inline">Secure checkout • 24/7 support • Price match</span>
+            <span>{t('overHappyDrivers')} <b className="text-white">200,000</b> {t('happyDriversTail')}</span>
+            <span className="hidden sm:inline">{t('secureCheckout')} • {t('support247')} • {t('priceMatch')}</span>
             <a href="#deals" className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white transition hover:bg-red-500">
-              Today’s deals <ArrowRight className="h-4 w-4" />
+              {t('todaysDeals')} <ArrowRight className="h-4 w-4" />
             </a>
           </div>
         </motion.div>

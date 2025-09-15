@@ -11,6 +11,7 @@ import {
   BadgeCheck,
   Lock
 } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 // Trust & Support Section
 // Theme: Black background, white text, red accents
@@ -42,12 +43,13 @@ function Pill({ children }: { children: React.ReactNode }) {
 }
 
 export default function TrustSupport({
-  headline = "Why drivers trust us",
-  kicker = "Support & guarantees",
+  headline = "trustHeadline",
+  kicker = "trustKicker",
 }: {
   headline?: string;
   kicker?: string;
 }) {
+  const { t } = useT();
   return (
     <section className="relative w-full bg-black py-20 text-white">
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
@@ -61,15 +63,15 @@ export default function TrustSupport({
         >
           <div>
             <Pill>
-              <BadgeCheck className="h-3.5 w-3.5 text-red-500" /> {kicker}
+              <BadgeCheck className="h-3.5 w-3.5 text-red-500" /> {t(kicker as any)}
             </Pill>
-            <h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">{headline}</h2>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">{t(headline as any)}</h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
-            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1">Over 200k happy drivers</span>
-            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1">4.8★ average rating</span>
-            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1">Price match guarantee</span>
+            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1">{t('over200kHappy')}</span>
+            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1">{t('averageRating')}</span>
+            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1">{t('priceMatchGuarantee')}</span>
           </div>
         </motion.div>
 
@@ -87,8 +89,8 @@ export default function TrustSupport({
                 <ShieldCheck className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <h3 className="text-base font-bold">2‑Year Warranty</h3>
-                <p className="mt-1 text-sm text-white/70">Every product is backed for long‑term performance and reliability.</p>
+                <h3 className="text-base font-bold">{t('warranty2Year')}</h3>
+                <p className="mt-1 text-sm text-white/70">{t('warrantyDesc')}</p>
               </div>
             </div>
             <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rotate-45 bg-red-600/20 blur-2xl" />
@@ -100,8 +102,8 @@ export default function TrustSupport({
                 <Truck className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <h3 className="text-base font-bold">Fast Free Shipping</h3>
-                <p className="mt-1 text-sm text-white/70">Dispatch in 24–48h on most orders with tracked delivery.</p>
+                <h3 className="text-base font-bold">{t('fastFreeShipping')}</h3>
+                <p className="mt-1 text-sm text-white/70">{t('shippingDesc')}</p>
               </div>
             </div>
             <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rotate-45 bg-red-600/20 blur-2xl" />
@@ -113,8 +115,8 @@ export default function TrustSupport({
                 <CreditCard className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <h3 className="text-base font-bold">Secure Payments</h3>
-                <p className="mt-1 text-sm text-white/70">256‑bit SSL, PCI‑compliant checkout, and multiple payment options.</p>
+                <h3 className="text-base font-bold">{t('securePayments')}</h3>
+                <p className="mt-1 text-sm text-white/70">{t('paymentsDesc')}</p>
               </div>
             </div>
             <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rotate-45 bg-red-600/20 blur-2xl" />
@@ -126,8 +128,8 @@ export default function TrustSupport({
                 <Headset className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <h3 className="text-base font-bold">24/7 Expert Support</h3>
-                <p className="mt-1 text-sm text-white/70">Real humans who know cars—chat, email, or phone anytime.</p>
+                <h3 className="text-base font-bold">{t('expertSupport')}</h3>
+                <p className="mt-1 text-sm text-white/70">{t('supportDesc')}</p>
               </div>
             </div>
             <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rotate-45 bg-red-600/20 blur-2xl" />
@@ -139,8 +141,8 @@ export default function TrustSupport({
                 <RefreshCcw className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <h3 className="text-base font-bold">Easy Returns</h3>
-                <p className="mt-1 text-sm text-white/70">30‑day hassle‑free returns. Try it, love it, or send it back.</p>
+                <h3 className="text-base font-bold">{t('easyReturnsTitle')}</h3>
+                <p className="mt-1 text-sm text-white/70">{t('returnsDesc')}</p>
               </div>
             </div>
             <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rotate-45 bg-red-600/20 blur-2xl" />
@@ -152,8 +154,8 @@ export default function TrustSupport({
                 <Lock className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <h3 className="text-base font-bold">Price Match</h3>
-                <p className="mt-1 text-sm text-white/70">Found a lower price? We’ll match it on eligible products.</p>
+                <h3 className="text-base font-bold">{t('priceMatchTitle')}</h3>
+                <p className="mt-1 text-sm text-white/70">{t('priceMatchDesc')}</p>
               </div>
             </div>
             <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rotate-45 bg-red-600/20 blur-2xl" />
@@ -172,14 +174,14 @@ export default function TrustSupport({
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-red-500" />
               <span>
-                Drive with confidence — <b className="text-white">warranty</b>, <b className="text-white">secure checkout</b>, and <b className="text-white">expert support</b> on every order.
+                {t('driveWithConfidence')} <b className="text-white">{t('warrantyText')}</b>, <b className="text-white">{t('secureCheckoutText')}</b>, and <b className="text-white">{t('expertSupport2')}</b> {t('onEveryOrder')}
               </span>
             </div>
             <a
               href="#support"
               className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
             >
-              Get help now
+              {t('getHelpNow')}
             </a>
           </div>
         </motion.div>

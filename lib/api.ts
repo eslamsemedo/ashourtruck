@@ -1,4 +1,4 @@
-export async function getProducts(url: string, forceRefresh: boolean = false) {
+export async function  getProducts(url: string, forceRefresh: boolean = false) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout

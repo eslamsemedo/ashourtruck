@@ -209,6 +209,7 @@
 import React from "react";
 import { motion, type Variants } from "framer-motion";
 import { Wrench, Lightbulb, Gauge, LifeBuoy, Car, Cpu, Disc3, Sparkles } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export type Category = {
   id: string;
@@ -238,12 +239,12 @@ const card: Variants = {
 };
 
 const defaultCategories: Category[] = [
-  { id: "lighting", title: "Lighting", href: "/category/lighting", tagline: "LED & Laser precision", icon: <Lightbulb className="h-5 w-5 text-red-500" /> },
-  { id: "performance", title: "Performance", href: "/category/performance", tagline: "Exhaust, intakes, ECU", icon: <Gauge className="h-5 w-5 text-red-500" /> },
-  { id: "interior", title: "Interior", href: "/category/interior", tagline: "Seats, mats, trim", icon: <LifeBuoy className="h-5 w-5 text-red-500" /> },
-  { id: "wheels", title: "Wheels & Rims", href: "/category/wheels", tagline: "Strength & style", icon: <Disc3 className="h-5 w-5 text-red-500" /> },
-  { id: "exterior", title: "Aero & Exterior", href: "/category/exterior", tagline: "Spoilers, lips, kits", icon: <Car className="h-5 w-5 text-red-500" /> },
-  { id: "tech", title: "Tech & Audio", href: "/category/tech", tagline: "Cams, CarPlay, subs", icon: <Cpu className="h-5 w-5 text-red-500" /> },
+  { id: "lighting", title: "lighting", href: "/category/lighting", tagline: "taglineLighting", icon: <Lightbulb className="h-5 w-5 text-red-500" /> },
+  { id: "performance", title: "performance", href: "/category/performance", tagline: "taglinePerformance", icon: <Gauge className="h-5 w-5 text-red-500" /> },
+  { id: "interior", title: "interior", href: "/category/interior", tagline: "taglineInterior", icon: <LifeBuoy className="h-5 w-5 text-red-500" /> },
+  { id: "wheels", title: "wheelsRims", href: "/category/wheels", tagline: "taglineWheels", icon: <Disc3 className="h-5 w-5 text-red-500" /> },
+  { id: "exterior", title: "aeroExterior", href: "/category/exterior", tagline: "taglineExterior", icon: <Car className="h-5 w-5 text-red-500" /> },
+  { id: "tech", title: "techAudio", href: "/category/tech", tagline: "taglineTech", icon: <Cpu className="h-5 w-5 text-red-500" /> },
 ];
 
 function Shine() {
@@ -259,13 +260,14 @@ function Shine() {
 
 export default function FeaturedCategories({
   categories = defaultCategories,
-  headline = "Featured Categories",
-  kicker = "Shop by style or function",
+  headline = "featuredHeadline",
+  kicker = "featuredKicker",
 }: {
   categories?: Category[];
   headline?: string;
   kicker?: string;
 }) {
+  const { t } = useT();
   return (
     <section className="relative w-full bg-black py-20 text-white">
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
@@ -278,16 +280,16 @@ export default function FeaturedCategories({
         >
           <div>
             <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 text-red-500" /> {kicker}
+              <Sparkles className="h-3.5 w-3.5 text-red-500" /> {t(kicker as any)}
             </p>
-            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{headline}</h2>
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{t(headline as any)}</h2>
           </div>
 
           <a
             href="/categories"
             className="group relative inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10"
           >
-            Browse all
+            {t('browseAll')}
             <Wrench className="h-4 w-4 transition-transform group-hover:rotate-12" />
             <span className="absolute -inset-1 -z-10 rounded-xl bg-red-600/0 blur-xl transition group-hover:bg-red-600/10" />
           </a>
@@ -321,8 +323,8 @@ export default function FeaturedCategories({
                       {c.icon ?? <Lightbulb className="h-5 w-5 text-red-500" />}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold">{c.title}</h3>
-                      <p className="text-xs text-white/70">{c.tagline ?? "Explore now"}</p>
+                      <h3 className="text-lg font-bold">{t(c.title as any)}</h3>
+                      <p className="text-xs text-white/70">{c.tagline ? t(c.tagline as any) : t('exploreNow')}</p>
                     </div>
                   </div>
 
@@ -338,8 +340,8 @@ export default function FeaturedCategories({
                 </div>
 
                 <div className="mt-5 flex items-center justify-between text-xs text-white/70">
-                  <span>Handpicked gear</span>
-                  <span className="rounded-full bg-red-600/80 px-2 py-0.5 text-[10px] font-semibold">Hot</span>
+                  <span>{t('handpickedGear')}</span>
+                  <span className="rounded-full bg-red-600/80 px-2 py-0.5 text-[10px] font-semibold">{t('hot')}</span>
                 </div>
 
                 <Shine />

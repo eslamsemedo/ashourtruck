@@ -1,16 +1,19 @@
 import { configureStore } from '@reduxjs/toolkit'
 import cartReducer from './cart/cartSlice'
+import langReducer from './lang/langSlice'
 import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import { combineReducers } from 'redux'
 
 const rootReducer = combineReducers({
   cart: cartReducer,
+  lang: langReducer,
 })
 
 const persistConfig = {
   key: 'root',
   storage,
+  whitelist: ['cart', 'lang'],
 }
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

@@ -3,11 +3,13 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin, Car } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 // Footer for car accessories e-commerce website
 // Theme: black background, white text, red accents
 
 export default function Footer() {
+  const { t } = useT();
   return (
     <footer className="relative w-full bg-black text-white">
       {/* Top section */}
@@ -17,41 +19,41 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2">
               <Car className="h-6 w-6 text-red-500" />
-              <span className="text-xl font-bold">RPM AutoGear</span>
+              <span className="text-xl font-bold">{t('brand')}</span>
             </div>
             <p className="mt-4 max-w-xs text-sm text-white/70">
-              Premium car accessories engineered for performance, style, and reliability.
+              {t('brandDescription')}
             </p>
           </div>
 
           {/* Shop */}
           <div>
-            <h3 className="text-sm font-semibold text-white/90">Shop</h3>
+            <h3 className="text-sm font-semibold text-white/90">{t('shopSection')}</h3>
             <ul className="mt-4 space-y-2 text-sm text-white/70">
-              <li><a href="/category/lighting" className="hover:text-white">Lighting</a></li>
-              <li><a href="/category/performance" className="hover:text-white">Performance</a></li>
-              <li><a href="/category/interior" className="hover:text-white">Interior</a></li>
-              <li><a href="/category/wheels" className="hover:text-white">Wheels & Rims</a></li>
-              <li><a href="/category/exterior" className="hover:text-white">Exterior</a></li>
-              <li><a href="/category/tech" className="hover:text-white">Tech & Audio</a></li>
+              <li><a href="/category/lighting" className="hover:text-white">{t('lighting')}</a></li>
+              <li><a href="/category/performance" className="hover:text-white">{t('performance')}</a></li>
+              <li><a href="/category/interior" className="hover:text-white">{t('interior')}</a></li>
+              <li><a href="/category/wheels" className="hover:text-white">{t('wheelsRims')}</a></li>
+              <li><a href="/category/exterior" className="hover:text-white">{t('exterior')}</a></li>
+              <li><a href="/category/tech" className="hover:text-white">{t('techAudio')}</a></li>
             </ul>
           </div>
 
           {/* Support */}
           <div>
-            <h3 className="text-sm font-semibold text-white/90">Support</h3>
+            <h3 className="text-sm font-semibold text-white/90">{t('supportSection')}</h3>
             <ul className="mt-4 space-y-2 text-sm text-white/70">
-              <li><a href="/support/warranty" className="hover:text-white">Warranty</a></li>
-              <li><a href="/support/shipping" className="hover:text-white">Shipping</a></li>
-              <li><a href="/support/returns" className="hover:text-white">Returns</a></li>
-              <li><a href="/support/contact" className="hover:text-white">Contact Us</a></li>
-              <li><a href="/support/faq" className="hover:text-white">FAQ</a></li>
+              <li><a href="/support/warranty" className="hover:text-white">{t('warranty2y')}</a></li>
+              <li><a href="/support/shipping" className="hover:text-white">{t('freeFastShipping')}</a></li>
+              <li><a href="/support/returns" className="hover:text-white">{t('easyReturns')}</a></li>
+              <li><a href="/support/contact" className="hover:text-white">{t('contactUs')}</a></li>
+              <li><a href="/support/faq" className="hover:text-white">{t('faq')}</a></li>
             </ul>
           </div>
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-semibold text-white/90">Contact</h3>
+            <h3 className="text-sm font-semibold text-white/90">{t('contactSection')}</h3>
             <ul className="mt-4 space-y-3 text-sm text-white/70">
               <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-red-500" /> support@rpm-autogear.com</li>
               <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-red-500" /> +1 (800) 123-4567</li>
@@ -76,10 +78,10 @@ export default function Footer() {
         className="border-t border-white/10 bg-black/80"
       >
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-xs text-white/50 md:flex-row">
-          <span>© {new Date().getFullYear()} RPM AutoGear. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} {t('brand')}. {t('allRightsReserved')}</span>
           <div className="flex gap-4">
-            <a href="/privacy" className="hover:text-white">Privacy Policy</a>
-            <a href="/terms" className="hover:text-white">Terms of Service</a>
+            <a href="/privacy" className="hover:text-white">{t('privacyPolicy')}</a>
+            <a href="/terms" className="hover:text-white">{t('termsOfService')}</a>
           </div>
         </div>
       </motion.div>

@@ -3,16 +3,19 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "react-hot-toast";
+import Header from "@/components/header";
+import { LanguageHtml } from "@/components/providers";
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-
         <Providers>
+          <LanguageHtml />
+          <Header />
           <Toaster
             position="bottom-right"
             reverseOrder={false}

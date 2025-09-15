@@ -3,6 +3,7 @@
 import React from "react";
 import { motion, type Variants } from "framer-motion";
 import { Newspaper, ArrowRight, Tag } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 // Blog / Car Culture News Section
 // Theme: black background, white text, red accents
@@ -119,8 +120,8 @@ function Card({ post, featured = false }: { post: Post; featured?: boolean }) {
 
 export default function BlogNews({
   posts = defaultPosts,
-  headline = "Car Culture & News",
-  kicker = "From the RPM Journal",
+  headline = "blogHeadline",
+  kicker = "blogKicker",
   ctaHref = "/blog",
 }: {
   posts?: Post[];
@@ -128,6 +129,7 @@ export default function BlogNews({
   kicker?: string;
   ctaHref?: string;
 }) {
+  const { t } = useT();
   const [first, ...rest] = posts;
 
   return (
@@ -143,16 +145,16 @@ export default function BlogNews({
         >
           <div>
             <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur">
-              <Newspaper className="h-3.5 w-3.5 text-red-500" /> {kicker}
+              <Newspaper className="h-3.5 w-3.5 text-red-500" /> {t(kicker as any)}
             </p>
-            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{headline}</h2>
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{t(headline as any)}</h2>
           </div>
 
           <a
             href={ctaHref}
             className="group inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10"
           >
-            View all
+            {t('viewAll')}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </a>
         </motion.div>

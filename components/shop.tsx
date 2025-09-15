@@ -468,7 +468,7 @@ export default function ShopPage({ apiUrl = "https://mediumaquamarine-loris-5922
                     </div>
                     <div className="mt-4 flex items-end justify-between">
                       <div className="text-lg font-bold">${p.priceEach.toFixed(2)}</div>
-                      <a href={`/products/${p.id}`} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500">View</a>
+                      <a href={`/shop/${p.id}?lang=${lang}`} className="rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500">View</a>
                     </div>
                   </div>
                 </motion.li>

@@ -25,14 +25,29 @@ export default function Home() {
       <BenefitsStrip />
       <PromotionsGrid />
        */}
-      <Header />
+
       <Hero />
-      <FeaturedCategories />
-      <BestSellers />
-      <TrustSupport />
-      <BlogNews />
-      <NewsletterSignup />
-      <Footer />
+      <div id="featured-categories">
+
+        <FeaturedCategories />
+      </div>
+
+      <div id="best-sellers">
+        <BestSellers />
+      </div>
+      <div id="trust-support">
+        <TrustSupport />
+      </div>
+      <div id="blog-news">
+        <BlogNews />
+      </div>
+      <div id="newsletter-signup">
+        <NewsletterSignup />
+      </div>
+      <div id="footer">
+
+        <Footer />
+      </div>
     </>
   );
 }
