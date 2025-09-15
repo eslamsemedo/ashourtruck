@@ -32,15 +32,15 @@ async function getProduct(id: string, lang: "en" | "ar" = "en"): Promise<Product
   };
 }
 
-type Props = {
-  params: { id: string };
-  searchParams?: { lang: string };
-};
-  export default async function Page({ params, searchParams }: Props) {
-    const { id } = await params;
-    const { lang } = await searchParams ?? { lang: "en" };
-    const lange = (lang === "ar" ? "ar" : "en") as "en" | "ar";
-  const product = await getProduct(id, lange);
+// type Props = {
+//   params: { id: string };
+//   searchParams?: { lang: string };
+// };
+export default async function Page(props: PageProps<'/shop/[id]'>) {
+  const { id } = await props.params;
+  const query = await props.searchParams
+  const lang = (query.lang === "ar" ? "ar" : "en") as "en" | "ar";
+  const product = await getProduct(id, lang);
 
   if (!product) {
     return (
