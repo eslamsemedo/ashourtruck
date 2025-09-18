@@ -1,4 +1,4 @@
-export async function  getProducts(url: string, forceRefresh: boolean = false) {
+export async function  getProducts(url: string) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -77,6 +77,36 @@ export async function deleteProduct(productId: number) {
       throw new Error('Request timeout. Please try again.');
     }
     console.error("Delete API: Error:", error);
+    throw error;
+  }
+}
+
+export async function  getProductsUser(url: string) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    // Add cache-busting parameter when force refreshing
+    const finalUrl = url;
+
+    const res = await fetch(finalUrl, {cache: "no-store", signal: controller.signal, redirect: "follow"}); // Disable cache when force refreshing
+
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log('API Response time:', 'Data received:', data);
+    return data;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Request timeout after 10 seconds');
+      throw new Error('Request timeout. Please try again.');
+    }
+    console.error("API Error:", error);
     throw error;
   }
 }

@@ -3,6 +3,9 @@ import React from "react";
 import { motion, AnimatePresence, type Variants, type MotionProps } from "framer-motion";
 import { ArrowRight, ShieldCheck, Truck, Sparkles } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import Link from "next/link";
+import Image from "next/image"
+// import { Image } from 'next/image';
 
 // Hero section for a car accessory e-commerce website
 // Colors: Black (base), White (text), Red (accents)
@@ -101,27 +104,31 @@ export default function Hero() {
           </motion.p>
 
           <motion.div variants={item} className="mt-8 flex flex-wrap items-center gap-4">
-            <motion.a
-              whileHover="hover"
-              initial="rest"
-              animate="rest"
-              href="#shop"
-              className="group relative inline-flex items-center justify-center rounded-2xl bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/30 outline-none transition hover:bg-red-500 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+            <Link
+              href="/shop"
             >
-              <span>{t('shopNow')}</span>
-              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-              <motion.span
-                variants={shine}
-                className="pointer-events-none absolute inset-y-0 left-0 h-full w-[40%] skew-x-12 bg-white/30 mix-blend-overlay"
-              />
-            </motion.a>
+              <motion.div
+                whileHover="hover"
+                initial="rest"
+                animate="rest"
+                className="group relative inline-flex items-center justify-center rounded-2xl bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-red-600/30 outline-none transition hover:bg-red-500 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+              >
 
-            <a
-              href="#categories"
+                <span>{t('shopNow')}</span>
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+                <motion.span
+                  variants={shine}
+                  className="pointer-events-none absolute inset-y-0 left-0 h-full w-[40%] skew-x-12 bg-white/30 mix-blend-overlay"
+                />
+              </motion.div>
+            </Link>
+
+            <Link
+              href="/shop"
               className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-base font-semibold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10"
             >
               {t('exploreCategories')}
-            </a>
+            </Link>
           </motion.div>
 
           {/* Trust badges */}
@@ -171,7 +178,9 @@ export default function Hero() {
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   className="grid h-28 w-28 place-items-center rounded-full border border-white/20 bg-black/60 shadow-[0_0_120px_rgba(239,68,68,0.25)]"
                 >
-                  <span className="text-2xl font-black tracking-widest text-white">RPM</span>
+                  <span className="text-2xl font-black tracking-widest text-white flex justify-center items-center">
+                    RPM
+                  </span>
                 </motion.div>
               </div>
             </div>

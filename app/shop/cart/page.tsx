@@ -13,38 +13,52 @@ import {
   applyCoupon,
 } from "@/app/state/cart/cartSlice";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, Minus, Plus, ArrowLeft, Tag, TicketPercent } from "lucide-react";
+import { Trash2, Minus, Plus, ArrowLeft, Tag, TicketPercent, Edit, X } from "lucide-react";
 import { useT } from "@/lib/i18n";
-
-/**
- * Cart state contract this page expects
- * -------------------------------------------------
- * state.cart: {
- *   items: Array<{
- *     id: number | string;
- *     name: string;
- *     image: string;
- *     price: number;       // unit price currently applied
- *     qty: number;         // quantity
- *     category?: string;
- *     weight?: number;     // optional – used for shipping hint
- *     sku?: string;
- *   }>;
- *   subtotal: number;      // derived; optional if you compute here
- *   discount?: number;     // optional – value subtracted from subtotal
- *   coupon?: string | null;
- *   currency?: string;     // default USD
- * }
- */
 
 // If your slice doesn't provide subtotal/discount, it's computed below as a fallback.
 function calcSubtotal(items: { price: number; qty: number }[]) {
   return items.reduce((sum, it) => sum + it.price * it.qty, 0);
 }
 
+type Transport = { zone: string; weight_kg: string; price: string };
+
+type CustomerForm = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  notes?: string;
+};
+
+const initialForm: CustomerForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  country: "",
+  notes: "",
+};
+
 export default function CartPage() {
   const dispatch = useDispatch();
   const cart = useSelector((s: RootState) => s.cart);
+  const totalW = useSelector((s:RootState) =>{
+    return s.cart.items
+    .map((v) => (v.weight ?? 0) * v.qty)
+    .reduce((acc, curr) => acc + curr, 0);
+  })
   const { t, code: lang } = useT();
 
   const currency = cart?.currency ?? "USD";
@@ -55,29 +69,24 @@ export default function CartPage() {
   const coupon = cart?.coupon ?? null;
 
   // Transportation list + selection
-  type Transport = { id: number; zone: string; weight_kg: string; price: string };
   const [transports, setTransports] = React.useState<Transport[]>([]);
-  const [selectedTransportId, setSelectedTransportId] = React.useState<number | null>(null);
-  const selectedTransport = React.useMemo(
-    () => transports.find(t => t.id === selectedTransportId) || null,
-    [transports, selectedTransportId]
-  );
+  const [selectedTransportKey, setSelectedTransportKey] = React.useState<string>("");
+  const makeTKey = React.useCallback((t: Transport, idx: number) => `${t.zone}|${t.weight_kg}|${t.price}|${idx}`,[ ]);
+  const selectedTransport = React.useMemo(() => {
+    return transports.find((t, idx) => makeTKey(t, idx) === selectedTransportKey) ?? null;
+  }, [transports, selectedTransportKey, makeTKey]);
+  // ---------------------------------
   React.useEffect(() => {
     let ignore = false;
     (async () => {
       try {
-        const res = await fetch("https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/admin/transportations", {
+        const res = await fetch("https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/user/transportations", {
           cache: "no-store",
-          headers: {
-            Authorization: `Bearer ${"9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a"}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        const data = json?.data?.data ?? [];
-        if (!ignore) setTransports(data);
+        const data = json?.data ?? [];
+        if (!ignore) setTransports(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error("Failed to load transports", e);
       }
@@ -85,9 +94,7 @@ export default function CartPage() {
     return () => { ignore = true };
   }, []);
 
-  // Shipping / tax placeholders — tweak for your business rules
-  // Shipping derived from selected transport. If none selected, show 0 until user chooses.
-  const shipping = selectedTransport ? Number.parseFloat(selectedTransport.price) || 0 : 0;
+  const shipping = selectedTransport ? totalW * Number.parseFloat(selectedTransport.price) || 0 : 0;
   const taxRate = 0.0; // if you estimate tax client-side, set a rate here
   const estimatedTax = (subtotal - discount + shipping) * taxRate;
   const total = Math.max(0, subtotal - discount + shipping + estimatedTax);
@@ -102,40 +109,110 @@ export default function CartPage() {
     dispatch(applyCoupon(c));
   };
 
+  // NEW: Modal + form state
+  const [open, setOpen] = React.useState(false);
+  const [form, setForm] = React.useState<CustomerForm>(initialForm);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const validate = (f: CustomerForm) => {
+    const e: Record<string,string> = {};
+    if (!f.firstName.trim()) e.firstName = t("required");
+    if (!f.lastName.trim()) e.lastName = t("required");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = t("invalidemail");
+    if (!f.phone.trim()) e.phone = t("required");
+    if (!f.addressLine1.trim()) e.addressLine1 = t("required");
+    if (!f.city.trim()) e.city = t("required");
+    if (!f.country.trim()) e.country = t("required");
+    if (!f.postalCode.trim()) e.postalCode = t("required");
+    return e;
+  };
+
+  const handleCheckoutClick = () => {
+    if (items.length === 0) return;
+    setOpen(true);
+  };
+
+  const handleSubmit = async (evt: React.FormEvent) => {
+    evt.preventDefault();
+    const e = validate(form);
+    setErrors(e);
+    if (Object.keys(e).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      // Build payload for backend
+      const payload = {
+        currency,
+        items: items.map((it) => ({
+          product_id: it.id,
+          name: it.name,
+          qty: it.qty,
+          unit_price: it.price,
+          line_total: Number((it.price * it.qty).toFixed(2)),
+          image: it.image,
+          category: it.category,
+          weight: it.weight,
+          sku: it.sku,
+        })),
+        summary: {
+          subtotal: Number(subtotal.toFixed(2)),
+          discount: Number(discount.toFixed(2)),
+          shipping: Number(shipping.toFixed(2)),
+          tax: Number(estimatedTax.toFixed(2)),
+          total: Number(total.toFixed(2)),
+        },
+        coupon: coupon || undefined,
+        transportation: selectedTransport
+                    ? {
+                        zone: selectedTransport.zone,
+                        weight_kg: selectedTransport.weight_kg,
+                        price: Number.parseFloat(selectedTransport.price),
+                      }
+                    : undefined,
+        customer: {
+          first_name: form.firstName,
+          last_name: form.lastName,
+          email: form.email,
+          phone: form.phone,
+          address: {
+            line1: form.addressLine1,
+            line2: form.addressLine2 || undefined,
+            city: form.city,
+            state: form.state,
+            postal_code: form.postalCode,
+            country: form.country,
+          },
+          notes: form.notes || undefined,
+        },
+      };
+
+      console.log('ORDER_PAYLOAD', payload);
+      console.log('ORDER_PAYLOAD_JSON', JSON.stringify(payload, null, 2));
+
+      // Example: Send to your API route (uncomment + adjust path)
+      // const res = await fetch('/api/checkout', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(payload),
+      // });
+      // if (!res.ok) throw new Error(`Checkout failed: ${res.status}`);
+
+      // Example: navigate to checkout after successful POST
+      // window.location.href = "/checkout";
+
+      setOpen(false);
+    } catch (err) {
+      console.error(err);
+      // Show a toast/snackbar here if you have one
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-7xl px-6 pb-24 pt-28 lg:px-8">
-        {/* Language Switcher */}
-        {/* <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, margin: "16px 0" }}>
-          <button
-            onClick={() => dispatch({ type: "lang/setLanguage", payload: "en" })}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 6,
-              border: lang === "en" ? "2px solid #ef4444" : "1px solid #ccc",
-              background: lang === "en" ? "#ef4444" : "#fff",
-              color: lang === "en" ? "#fff" : "#222",
-              fontWeight: lang === "en" ? 700 : 400,
-              cursor: "pointer"
-            }}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => dispatch({ type: "lang/setLanguage", payload: "ar" })}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 6,
-              border: lang === "ar" ? "2px solid #ef4444" : "1px solid #ccc",
-              background: lang === "ar" ? "#ef4444" : "#fff",
-              color: lang === "ar" ? "#fff" : "#222",
-              fontWeight: lang === "ar" ? 700 : 400,
-              cursor: "pointer"
-            }}
-          >
-            AR
-          </button>
-        </div> */}
         {/* Header */}
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
@@ -196,25 +273,16 @@ export default function CartPage() {
                             </div>
                           </div>
                           <div className="mt-3 flex flex-wrap items-center gap-3">
-                            {/* Quantity control */}
+                            {/* Quantity control (example: edit on PDP) */}
                             <div className="inline-flex items-center rounded-xl border border-white/15 bg-black/60">
-                              <button
-                                type="button"
-                                onClick={() => dispatch(decrementQty(it.id))}
-                                aria-label={`${t("decreaseQuantityFor") || "Decrease quantity for"} ${it.name}`}
-                                className="grid h-10 w-10 place-items-center rounded-l-xl border-r border-white/10 text-white/90 transition hover:bg-white/10"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </button>
                               <span className="min-w-[2ch] px-3 text-center font-semibold">{it.qty}</span>
-                              <button
-                                type="button"
-                                onClick={() => dispatch(incrementQty(it.id))}
+                              <Link
+                                href={`/shop/${it.id}`}
                                 aria-label={`${t("increaseQuantityFor") || "Increase quantity for"} ${it.name}`}
                                 className="grid h-10 w-10 place-items-center rounded-r-xl border-l border-white/10 text-white/90 transition hover:bg-white/10"
                               >
-                                <Plus className="h-4 w-4" />
-                              </button>
+                                <Edit className="h-4 w-4" />
+                              </Link>
                             </div>
                             {/* Price */}
                             <div className="text-sm text-white/70">
@@ -267,19 +335,23 @@ export default function CartPage() {
               <label className="text-sm text-white/70">{t("selectTransportation")}</label>
               <select
                 className="mt-2 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm outline-none"
-                value={selectedTransportId ?? ""}
-                onChange={(e) => setSelectedTransportId(e.target.value ? Number(e.target.value) : null)}
+                value={selectedTransportKey}
+                onChange={(e) => setSelectedTransportKey(e.target.value)}
               >
-                <option value="" className="bg-black">{t("choose")}</option>
-                {transports.map((tpt: any) => (
-                  <option key={tpt.id} value={tpt.id} className="bg-black">
-                    {tpt.zone} • {t("upTo") || "up to"} {Number.parseFloat(tpt.weight_kg || '0').toFixed(0)}kg • ${Number.parseFloat(tpt.price || '0').toFixed(2)}
-                  </option>
-                ))}
+                <option key="__placeholder" value="" className="bg-black">{t("choose")}</option>
+                {transports.map((tpt: Transport, idx: number) => {
+                  const optKey = makeTKey(tpt, idx);
+                  return (
+                    <option key={optKey} value={optKey} className="bg-black">
+                      {/* {tpt.zone} • {"up to"} {Number.parseFloat(tpt.weight_kg || '0').toFixed(0)}kg • ${Number.parseFloat(tpt.price || '0').toFixed(2)} */}
+                      {tpt.zone} • ${Number.parseFloat(tpt.price || '0').toFixed(2)}/kg
+                    </option>
+                  );
+                })}
               </select>
               {selectedTransport && (
                 <p className="mt-2 text-xs text-white/60">
-                  {t("selected")}: {selectedTransport.zone} — ${Number.parseFloat(selectedTransport.price).toFixed(2)}
+                  {t("selected")}: {selectedTransport.zone} — ${Number.parseFloat(selectedTransport.price || '0').toFixed(2)}
                 </p>
               )}
             </div>
@@ -333,48 +405,13 @@ export default function CartPage() {
               <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-3 text-base">
                 <dt className="font-semibold">{t("total")}</dt>
                 <dd className="text-xl font-extrabold">{currencyFmt.format(total)}</dd>
+                <dd className="text-xl font-extrabold">{}</dd>
               </div>
             </dl>
             <button
               disabled={items.length === 0}
               className="mt-6 w-full rounded-xl bg-red-600 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() => {
-                // Build payload for backend
-                const payload = {
-                  currency,
-                  items: items.map((it) => ({
-                    product_id: it.id,
-                    name: it.name,
-                    qty: it.qty,
-                    unit_price: it.price,
-                    line_total: Number((it.price * it.qty).toFixed(2)),
-                    image: it.image,
-                    category: it.category,
-                    weight: it.weight,
-                    sku: it.sku,
-                  })),
-                  summary: {
-                    subtotal: Number(subtotal.toFixed(2)),
-                    discount: Number(discount.toFixed(2)),
-                    shipping: Number(shipping.toFixed(2)),
-                    tax: Number(estimatedTax.toFixed(2)),
-                    total: Number(total.toFixed(2)),
-                  },
-                  coupon: coupon || undefined,
-                  transportation: selectedTransport
-                    ? {
-                        id: selectedTransport.id,
-                        zone: selectedTransport.zone,
-                        weight_kg: selectedTransport.weight_kg,
-                        price: Number.parseFloat(selectedTransport.price),
-                      }
-                    : undefined,
-                };
-                console.log('ORDER_PAYLOAD', payload);
-                console.log('ORDER_PAYLOAD_JSON', JSON.stringify(payload, null, 2));
-                // Example: navigate to checkout after logging
-                // window.location.href = "/checkout";
-              }}
+              onClick={handleCheckoutClick}
             >
               {t("proceedToCheckout")}
             </button>
@@ -386,7 +423,206 @@ export default function CartPage() {
           </aside>
         </div>
       </div>
+
+      {/* Checkout Modal */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="checkout-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+            aria-modal="true"
+            role="dialog"
+          >
+            {/* Card */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 10, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+              className="w-full max-w-2xl rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-2xl"
+            >
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-bold">{t("shippingInformation") || "Shipping information"}</h3>
+                  <p className="mt-1 text-xs text-white/60">{t("weUseThisToFulfill") || "We use this info to fulfill and contact you about your order."}</p>
+                </div>
+                <button
+                  className="rounded-lg border border-white/10 p-2 text-white/70 hover:bg-white/10"
+                  onClick={() => setOpen(false)}
+                  aria-label={t("close") || "Close"}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Name */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field
+                    label={t("firstName") || "First name"}
+                    name="firstName"
+                    value={form.firstName}
+                    onChange={(v) => setForm({ ...form, firstName: v })}
+                    error={errors.firstName}
+                    autoComplete="given-name"
+                  />
+                  <Field
+                    label={t("lastName") || "Last name"}
+                    name="lastName"
+                    value={form.lastName}
+                    onChange={(v) => setForm({ ...form, lastName: v })}
+                    error={errors.lastName}
+                    autoComplete="family-name"
+                  />
+                </div>
+
+                {/* Contact */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field
+                    label={t("email") || "Email"}
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={(v) => setForm({ ...form, email: v })}
+                    error={errors.email}
+                    autoComplete="email"
+                  />
+                  <Field
+                    label={t("phone") || "Phone"}
+                    name="phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={(v) => setForm({ ...form, phone: v })}
+                    error={errors.phone}
+                    autoComplete="tel"
+                  />
+                </div>
+
+                {/* Address */}
+                <Field
+                  label={t("addressLine1") || "Address line 1"}
+                  name="addressLine1"
+                  value={form.addressLine1}
+                  onChange={(v) => setForm({ ...form, addressLine1: v })}
+                  error={errors.addressLine1}
+                  autoComplete="address-line1"
+                />
+                <Field
+                  label={t("addressLine2") || "Address line 2 (optional)"}
+                  name="addressLine2"
+                  value={form.addressLine2 || ""}
+                  onChange={(v) => setForm({ ...form, addressLine2: v })}
+                  autoComplete="address-line2"
+                />
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <Field
+                    label={t("city") || "City"}
+                    name="city"
+                    value={form.city}
+                    onChange={(v) => setForm({ ...form, city: v })}
+                    error={errors.city}
+                    autoComplete="address-level2"
+                  />
+                  <Field
+                    label={t("state") || "State/Province"}
+                    name="state"
+                    value={form.state}
+                    onChange={(v) => setForm({ ...form, state: v })}
+                    autoComplete="address-level1"
+                  />
+                  <Field
+                    label={t("postalCode") || "Postal code"}
+                    name="postalCode"
+                    value={form.postalCode}
+                    onChange={(v) => setForm({ ...form, postalCode: v })}
+                    error={errors.postalCode}
+                    autoComplete="postal-code"
+                  />
+                </div>
+
+                <Field
+                  label={t("country") || "Country"}
+                  name="country"
+                  value={form.country}
+                  onChange={(v) => setForm({ ...form, country: v })}
+                  error={errors.country}
+                  autoComplete="country-name"
+                />
+
+                <Field
+                  label={t("orderNotes") || "Order notes (optional)"}
+                  name="notes"
+                  as="textarea"
+                  value={form.notes || ""}
+                  onChange={(v) => setForm({ ...form, notes: v })}
+                />
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10"
+                  >
+                    {t("cancel") || "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submitting ? (t("processing") || "Processing…") : (t("confirmAndPay") || "Confirm & pay")}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
+  );
+}
+
+function Field({
+  label,
+  name,
+  value,
+  onChange,
+  error,
+  type = "text",
+  autoComplete,
+  as,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  type?: string;
+  autoComplete?: string;
+  as?: "textarea" | "input";
+}) {
+  const InputTag = as === "textarea" ? "textarea" : "input";
+  return (
+    <div>
+      <label htmlFor={name} className="mb-1 block text-xs font-medium text-white/80">{label}</label>
+      <InputTag
+        id={name}
+        name={name}
+        value={value}
+        onChange={(e: any) => onChange(e.target.value)}
+        className={`w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-white/40 ${
+          error ? "border-red-500/60" : "border-white/10"
+        }`}
+        autoComplete={autoComplete}
+        rows={as === "textarea" ? 4 : undefined}
+        type={as === "textarea" ? undefined : type}
+      />
+      {error ? <p className="mt-1 text-xs text-red-400">{error}</p> : null}
+    </div>
   );
 }
 

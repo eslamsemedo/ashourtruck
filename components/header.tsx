@@ -10,6 +10,7 @@ import { Car, Menu, X, ShoppingCart } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { toggleLanguage } from "@/app/state/lang/langSlice";
 import { useT } from "@/lib/i18n";
+import Image from "next/image";
 
 // Header / Navbar with animated Shop button + Cart badge
 // Theme: black background, white text, red accents
@@ -39,19 +40,23 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 export default function Header() {
   const [open, setOpen] = React.useState(false);
   // pull count from Redux (update selector according to your slice)
-  const itemCount = useSelector((s: RootState) =>
-    (s.cart.items ?? []).reduce((sum: number, it: any) => sum + (it.qty ?? 0), 0)
-  );
+  const itemCount = useSelector((s: RootState) => s.cart.items.length)
   const dispatch = useDispatch();
   const { t, code } = useT();
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur overflow-hidden ">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-1 lg:px-8">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2">
-          <Car className="h-6 w-6 text-red-500" />
-          <span className="text-lg font-bold">{t('brand')}</span>
+        <Link href="/" className="flex items-center gap-2 overflow-hidden">
+          <Image
+            src={"/logoCar.png"}  // Your logo path
+            alt="logo"
+            height={40}
+            width={40}
+            className="w-auto "  // Adjusted logo size
+          />
+          <span className="text-lg font-bold text-white">{t('brand')}</span>
         </Link>
 
         {/* Desktop Nav */}

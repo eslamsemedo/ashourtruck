@@ -12,7 +12,7 @@ import Header from './header';
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   console.log(pathname);
-  const isAdmin = pathname.startsWith("/admin");
+  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/shop/");
 
   return (
     <Provider store={store}>

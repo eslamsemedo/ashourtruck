@@ -210,6 +210,7 @@ import React from "react";
 import { motion, type Variants } from "framer-motion";
 import { Wrench, Lightbulb, Gauge, LifeBuoy, Car, Cpu, Disc3, Sparkles } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import Link from "next/link";
 
 export type Category = {
   id: string;
@@ -285,14 +286,14 @@ export default function FeaturedCategories({
             <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{t(headline as any)}</h2>
           </div>
 
-          <a
-            href="/categories"
+          <Link
+            href="/shop"
             className="group relative inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10"
           >
             {t('browseAll')}
             <Wrench className="h-4 w-4 transition-transform group-hover:rotate-12" />
             <span className="absolute -inset-1 -z-10 rounded-xl bg-red-600/0 blur-xl transition group-hover:bg-red-600/10" />
-          </a>
+          </Link>
         </motion.div>
 
         <motion.ul
@@ -304,16 +305,10 @@ export default function FeaturedCategories({
         >
           {categories.map((c) => (
             <motion.li key={c.id} variants={card}>
-              <a
-                href={c.href}
-                className="group relative block overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_0_0_0_rgba(239,68,68,0)] backdrop-blur transition hover:border-white/20 hover:shadow-[0_0_60px_-10px_rgba(239,68,68,0.35)]"
+              <div
+                // href={c.href}
+                className="group cursor-pointer relative block overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_0_0_0_rgba(239,68,68,0)] backdrop-blur transition hover:border-white/20 hover:shadow-[0_0_60px_-10px_rgba(239,68,68,0.35)]"
               >
-                {c.imageUrl && (
-                  <div
-                    className="absolute inset-0 -z-10 opacity-30"
-                    style={{ backgroundImage: `url(${c.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
-                  />
-                )}
 
                 <span className="absolute right-0 top-0 h-20 w-20 -translate-y-6 translate-x-6 rotate-45 bg-red-600/70 blur-2xl transition-opacity group-hover:opacity-90" />
 
@@ -328,7 +323,7 @@ export default function FeaturedCategories({
                     </div>
                   </div>
 
-                  <motion.span
+                  {/* <motion.span
                     initial={{ x: 0 }}
                     whileHover={{ x: 4 }}
                     transition={{ type: "spring", stiffness: 200, damping: 18 }}
@@ -336,7 +331,7 @@ export default function FeaturedCategories({
                     className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/80"
                   >
                     ➜
-                  </motion.span>
+                  </motion.span> */}
                 </div>
 
                 <div className="mt-5 flex items-center justify-between text-xs text-white/70">
@@ -345,7 +340,7 @@ export default function FeaturedCategories({
                 </div>
 
                 <Shine />
-              </a>
+              </div>
             </motion.li>
           ))}
         </motion.ul>

@@ -2,9 +2,13 @@
 
 import React from "react";
 import { useDispatch } from "react-redux";
-import { addItem } from "@/app/state/cart/cartSlice";
+import { addItem, removeItem } from "@/app/state/cart/cartSlice";
 import { motion } from "framer-motion";
 import { ArrowLeft, Tag, Minus, Plus, Info } from "lucide-react";
+import Image from "next/image";
+import toast from "react-hot-toast";
+import Link from "next/link";
+
 
 // -------- Types --------
 type QuantityTier = { from: string; to?: string; equal?: string; total?: string };
@@ -36,7 +40,7 @@ function i18n(lang: "en" | "ar") {
     bulk: ar ? "تسعير الجملة" : "Bulk pricing",
     each: ar ? "لكل قطعة" : "each",
     addToCart: ar ? "أضف إلى السلة" : "Add to Cart",
-    continueShopping: ar ? "متابعة التسوق" : "Continue shopping",
+    viewCart: ar ? "السلة" : "View Cart",
     quantity: ar ? "الكمية" : "Quantity",
     total: ar ? "الإجمالي" : "Total",
     unitPrice: ar ? "سعر الوحدة" : "Unit price",
@@ -63,7 +67,7 @@ function parseNum(v?: string) {
   return Number.isFinite(n) ? n : undefined;
 }
 
-function resolveUnitPrice(qty: number, base: number, tiers?: QuantityTier[]) {
+export function resolveUnitPrice(qty: number, base: number, tiers?: QuantityTier[]) {
   if (!tiers?.length || !qty) return base;
   // Find exact match first
   for (const t of tiers) {
@@ -130,7 +134,7 @@ export default function ProductDetails({ product }: { product: ProductData }) {
   return (
     <section className="w-full bg-black text-white" >
       {/* Banner like hero */}
-      <div className="relative isolate overflow-hidden">
+      {/* <div className="relative isolate overflow-hidden">
         <motion.div
           aria-hidden
           className="absolute inset-0 -z-10"
@@ -154,6 +158,100 @@ export default function ProductDetails({ product }: { product: ProductData }) {
           <h1 className="mt-6 text-3xl font-extrabold tracking-tight sm:text-4xl">{name}</h1>
           <p className="mt-1 text-white/70">{category}</p>
         </div>
+      </div> */}
+
+      <div className="relative isolate overflow-hidden bg-[#360606] mb-10">
+        {/* animated grid */}
+        <motion.div
+          aria-hidden
+          className="absolute inset-0 -z-10"
+          initial={{ scale: 1, opacity: 0.7 }}
+          animate={{ scale: [1, 1.02, 1], opacity: [0.7, 0.9, 0.7] }}
+          transition={{ duration: 16, repeat: Infinity }}
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+        {/* red beams */}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          initial={{ opacity: 0.25 }}
+          animate={{ opacity: [0.25, 0.4, 0.25] }}
+          transition={{ duration: 6, repeat: Infinity }}
+        >
+          <div className="absolute -left-20 top-0 h-[140%] w-40 rotate-12 bg-red-600/15 blur-2xl" />
+          <div className="absolute left-1/2 top-10 h-[120%] w-32 -translate-x-1/2 -rotate-12 bg-red-600/20 blur-2xl" />
+          <div className="absolute -right-24 bottom-0 h-[140%] w-40 -rotate-6 bg-red-600/15 blur-2xl" />
+        </motion.div>
+        {/* speed lines */}
+        <motion.div
+          aria-hidden
+          className="absolute inset-0 -z-10 opacity-30"
+          initial={{ backgroundPosition: "0px 0px" }}
+          animate={{ backgroundPosition: ["0px 0px", "200px 0px"] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0px, rgba(255,255,255,0.08) 2px, transparent 2px, transparent 12px)",
+          }}
+        />
+
+        <div className="mx-auto max-w-7xl px-6 py-8 sm:py-10 lg:px-8">
+          <div className="flex items-center justify-between">
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true, amount: 0.6 }}
+              className="group relative inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10"
+            >
+              <Link href="/shop">
+                <div className="flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                  {t.back}
+                  <motion.span
+                    initial={{ left: "-120%" }}
+                    whileHover={{ left: "120%" }}
+                    transition={{ duration: 0.9, ease: "easeInOut" }}
+                    className="pointer-events-none absolute inset-y-0 left-0 w-[40%] skew-x-12 bg-white/20 mix-blend-overlay"
+                  />
+                </div>
+              </Link>
+            </motion.div>
+          </div>
+
+          <motion.h1
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 text-4xl text-white font-extrabold tracking-tight sm:text-5xl"
+          >
+            {name}
+          </motion.h1>
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-3 max-w-2xl text-white/70"
+          >
+            {category}
+          </motion.p>
+
+          {/* sweeping shine across the banner */}
+          <motion.span
+            aria-hidden
+            className="pointer-events-none absolute left-[-30%] top-0 h-full w-[35%] -skew-x-12 bg-white/5"
+            initial={{ x: "-30%", opacity: 0 }}
+            animate={{ x: ["-30%", "130%"], opacity: [0, 1, 0] }}
+            transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 4 }}
+          />
+        </div>
       </div>
 
       {/* Content */}
@@ -161,7 +259,18 @@ export default function ProductDetails({ product }: { product: ProductData }) {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Image */}
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-            <img src={image} alt={name} className="h-full w-full object-cover" />
+            {/* Aspect ratio wrapper ensures consistent height */}
+            <div className="relative h-full aspect-[4/3] w-full">
+              <Image
+                src={image}
+                alt={name}
+                fill
+                className="object-cover"
+              // sizes="(max-width: 640px) 100vw,
+              //  (max-width: 1024px) 50vw,
+              //  25vw"
+              />
+            </div>
             <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-600/90 px-3 py-1 text-xs font-semibold">
               <Tag className="h-3.5 w-3.5" /> {category}
             </span>
@@ -204,7 +313,7 @@ export default function ProductDetails({ product }: { product: ProductData }) {
                       aria-label={`${t.qtyAssistive} -`}
                       onClick={dec}
                       disabled={qty <= 1}
-                      className="grid h-11 w-11 place-items-center rounded-l-xl border-r border-white/10 text-white/90 transition hover:bg-white/10 disabled:opacity-40"
+                      className="grid cursor-pointer h-11 w-11 place-items-center rounded-l-xl border-r border-white/10 text-white/90 transition hover:bg-white/10 disabled:opacity-40"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -221,7 +330,7 @@ export default function ProductDetails({ product }: { product: ProductData }) {
                       type="button"
                       aria-label={`${t.qtyAssistive} +`}
                       onClick={inc}
-                      className="grid h-11 w-11 place-items-center rounded-r-xl border-l border-white/10 text-white/90 transition hover:bg-white/10"
+                      className="grid cursor-pointer h-11 w-11 place-items-center rounded-r-xl border-l border-white/10 text-white/90 transition hover:bg-white/10"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -257,8 +366,10 @@ export default function ProductDetails({ product }: { product: ProductData }) {
               {/* Actions */}
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
-                  className="rounded-xl bg-red-600 px-5 py-3 font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
+                  className="rounded-xl cursor-pointer bg-red-600 px-5 py-3 font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
                   onClick={() => {
+                    toast.success('Added to Cart!')
+                    dispatch(removeItem(product.id))
                     dispatch(addItem({
                       id: product.id,
                       name: product.name,
@@ -273,10 +384,10 @@ export default function ProductDetails({ product }: { product: ProductData }) {
                   {t.addToCart}
                 </button>
                 <a
-                  href="/shop"
-                  className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white hover:border-white/25 hover:bg-white/10"
+                  href="/shop/cart"
+                  className="rounded-xl cursor-pointer border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white hover:border-white/25 hover:bg-white/10"
                 >
-                  {t.continueShopping}
+                  {t.viewCart}
                 </a>
               </div>
             </div>
@@ -284,9 +395,9 @@ export default function ProductDetails({ product }: { product: ProductData }) {
         </div>
 
         {/* Meta */}
-        <div className="mt-10 text-xs text-white/50">
+        {/* <div className="mt-10 text-xs text-white/50">
           ID: {product.id} • {t.created}: {formatDate(createdAt, lang)} • {t.updated}: {formatDate(updatedAt, lang)}
-        </div>
+        </div> */}
       </div>
     </section>
   );
