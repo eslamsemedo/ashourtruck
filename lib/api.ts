@@ -89,7 +89,12 @@ export async function  getProductsUser(url: string) {
     // Add cache-busting parameter when force refreshing
     const finalUrl = url;
 
-    const res = await fetch(finalUrl, {cache: "no-store", signal: controller.signal, redirect: "follow"}); // Disable cache when force refreshing
+    const res = await fetch(finalUrl, {
+      cache: "no-store", 
+      signal: controller.signal, 
+      redirect: "follow",
+      next: { revalidate: 60 }
+    }); // Disable cache when force refreshing
 
 
     clearTimeout(timeoutId);

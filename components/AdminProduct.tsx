@@ -331,8 +331,8 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }) {
       });
 
       if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`HTTP ${res.status}: ${txt}`);
+        const txt = await res.json() ;
+        throw new Error(` ${txt.message}`);
       }
 
       // Try parse returned row
