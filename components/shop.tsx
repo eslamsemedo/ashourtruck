@@ -170,7 +170,7 @@ export default function ShopPage({
           }}
         />
 
-        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-24 lg:px-8">
           <div className="flex items-center justify-between">
             <motion.a
               href="/"
