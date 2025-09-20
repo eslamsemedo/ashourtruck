@@ -150,7 +150,7 @@ export default function Header() {
               {t('shop')} <ShoppingCart className="h-4 w-4" />
             </Link>
             <Link
-              href="/cart"
+              href="shop/cart"
               className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white hover:border-white/25 hover:bg-white/10"
               onClick={() => setOpen(false)}
             >
@@ -161,6 +161,13 @@ export default function Header() {
                 </span>
               )}
             </Link>
+            <button
+              onClick={() => dispatch(toggleLanguage())}
+              className="inline-flex items-center rounded-2xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:border-white/25 hover:bg-white/10"
+              aria-label="Toggle language"
+            >
+              {code === 'en' ? 'AR' : 'EN'}
+            </button>
           </div>
         </motion.nav>
       )}
