@@ -229,13 +229,21 @@ const container: Variants = {
   }
 };
 
+// const card: Variants = {
+//   hidden: { opacity: 0, y: 24, scale: 0.98 },
+//   show: {
+//     opacity: 1,
+//     y: 0,
+//     scale: 1,
+//     transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+//   }
+// };
 const card: Variants = {
-  hidden: { opacity: 0, y: 24, scale: 0.98 },
+  hidden: { opacity: 0, y: 16 },
   show: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] }
   }
 };
 
