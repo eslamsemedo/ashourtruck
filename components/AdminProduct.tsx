@@ -493,7 +493,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
     setPageload(true)
 
     try {
-      const res = await fetch(`${window.location.origin}/api/auth/logout`, { method: "POST" });
+      const res = await fetch(`/api/auth/logout`, { method: "POST" });
 
       if (!res.ok) {
         // If backend/route fails, still force logout on client
