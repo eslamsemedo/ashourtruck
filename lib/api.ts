@@ -1,4 +1,9 @@
-export async function  getProducts(url: string) {
+"use server"
+import { ApiList } from "@/components/AdminProduct";
+import { cookies } from "next/headers";
+
+
+export async function getProducts(url: string) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -81,7 +86,7 @@ export async function deleteProduct(productId: number) {
   }
 }
 
-export async function  getProductsUser(url: string) {
+export async function getProductsUser(url: string) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -90,8 +95,8 @@ export async function  getProductsUser(url: string) {
     const finalUrl = url;
 
     const res = await fetch(finalUrl, {
-      cache: "no-store", 
-      signal: controller.signal, 
+      cache: "no-store",
+      signal: controller.signal,
       redirect: "follow",
       next: { revalidate: 60 }
     }); // Disable cache when force refreshing
@@ -113,5 +118,111 @@ export async function  getProductsUser(url: string) {
     }
     console.error("API Error:", error);
     throw error;
+  }
+}
+
+export async function getAdminProduct() {
+  // const ctrl = new AbortController();
+  const cookieStore = cookies();
+  const token = (await cookieStore).get("admin_token")?.value;
+
+
+  const BACKEND_URL = process.env.BACKEND_URL; // or NEXT_PUBLIC_BACKEND_URL if used in the browser
+  if (!BACKEND_URL) {
+    throw new Error("Missing BACKEND_URL in environment");
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/admin/products`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+      // signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data: ApiList = await res.json()
+
+    return data
+
+  } catch (e: any) {
+    throw new Error(`${e?.message || "Failed to load"}`)
+  }
+}
+
+
+export async function editAdminProduct(formdata: FormData, id: number | false) {
+  const cookieStore = cookies();
+  const token = (await cookieStore).get("admin_token")?.value;
+
+  const BACKEND_URL = process.env.BACKEND_URL
+  if (!BACKEND_URL) {
+    throw new Error("Missing BACKEND_URL in environment");
+  }
+
+  const url = id
+    ? `${BACKEND_URL}/admin/products/${id}`
+    : `${BACKEND_URL}/admin/products`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // DO NOT set Content-Type for FormData; browser sets boundary
+        Accept: "application/json",
+      },
+      body: formdata,
+    });
+
+    if (!res.ok) {
+      const txt = await res.json();
+      throw new Error(` ${txt.message}`);
+    }
+    const resData = await res.json()
+    return resData
+
+  } catch (e: any) {
+    throw new Error(`${e?.message || "Failed to load"}`)
+  }
+}
+
+export async function deleteAdminProduct(id: number) {
+  const cookieStore = cookies();
+  const token = (await cookieStore).get("admin_token")?.value;
+
+  const BACKEND_URL = process.env.BACKEND_URL
+  if (!BACKEND_URL) {
+    throw new Error("Missing BACKEND_URL in environment");
+  }
+  console.log(`${BACKEND_URL}/admin/products/${id}`)
+  try {
+    const res = await fetch(`${BACKEND_URL}/admin/products/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      // try to surface backend error message
+      // const j = await res.json();
+      const txt = await res.json();
+      throw new Error(` ${txt.message}`);
+      // let msg = `HTTP ${res.status}`;
+      // if (res?.message) msg = typeof j.message === "string" ? j.message : JSON.stringify(j.message);
+      // throw new Error(msg);
+    }
+    const resData = await res.json()
+    return resData
+  } catch (e: any) {
+    throw new Error(`${e?.message || "Failed to load"}`)
   }
 }

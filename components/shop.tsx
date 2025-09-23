@@ -174,7 +174,7 @@ export default function ShopPage({
           <div className="flex items-center justify-between">
             <motion.a
               href="/"
-              initial={{ y: 10, opacity: 0 }}
+              initial={{ y: 10, opacity: 0 }} 
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true, amount: 0.6 }}
               className="group relative inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:border-white/25 hover:bg-white/10"

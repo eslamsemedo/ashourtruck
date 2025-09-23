@@ -11,6 +11,7 @@ import {
   X,
   Tag,
   Layers,
+  LogOut,
 } from "lucide-react";
 
 /** ============================
@@ -41,7 +42,7 @@ type LangProduct = {
 
 type RawProduct = { en: LangProduct; ar: LangProduct };
 
-type ApiList = {
+export type ApiList = {
   status: string;
   message: Record<string, string>;
   data: {
@@ -68,6 +69,18 @@ type Product = {
   updatedAt: string;
   tiers: QuantityTier[]; // normalized tiers (0..3)
 };
+// type Product = {
+//   id: number | string;
+//   category: string;
+//   name: string;
+//   image?: string;
+//   priceEach: number;
+//   description?: string;
+//   weight: number;
+//   createdAt: string;
+//   updatedAt: string;
+//   tiers: Array<{ from?: number; to?: number; equal?: number; total?: number }>;
+// };
 
 const API =
   "https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/admin/products";
@@ -75,6 +88,9 @@ const API =
 // ⚠️ For production, don’t keep tokens client-side.
 const TOKEN =
   "9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a";
+
+
+import { deleteAdminProduct, editAdminProduct, getAdminProduct } from "@/lib/api";
 
 const money = (n?: string) => {
   const x = Number.parseFloat(n || "0");
@@ -102,12 +118,16 @@ function normalize(raw: RawProduct[], lang: "en" | "ar"): Product[] {
     };
   });
 }
+interface prop {
+  initialLang: "en" | "ar",
+}
 
-export default function AdminProducts({ initialLang = "en" as "en" | "ar" }) {
+export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: prop) {
   const [lang, setLang] = React.useState<"en" | "ar">(initialLang);
 
   // data
   const [loading, setLoading] = React.useState(true);
+  const [pageload, setPageload] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [records, setRecords] = React.useState<Product[]>([]);
   const [total, setTotal] = React.useState(0);
@@ -149,34 +169,29 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }) {
 
   // Load once / on language switch
   React.useEffect(() => {
-    const ctrl = new AbortController();
+    let cancelled = false;
+
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(API, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          cache: "no-store",
-          signal: ctrl.signal,
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as ApiList;
-        setApiData(json)
-        setRecords(normalize(json.data.data || [], lang));
-        setTotal(json.data.total || 0);
+        const json = await getAdminProduct();
+        if (cancelled) return;
+        setApiData(json);
+        setRecords(normalize(json.data.data ?? [], lang));
+        setTotal(json.data.total ?? 0);
         setError(null);
-      } catch (e: any) {
-        if (e.name !== "AbortError") setError(e?.message || "Failed to load");
+      } catch (e: unknown) {
+        if (!cancelled) {
+          const msg =
+            e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error";
+          setError(msg); // ✅ pass a string
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-    return () => ctrl.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => { cancelled = true; };
   }, []);
 
   const categories = React.useMemo(() => {
@@ -200,7 +215,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }) {
       const q = search.toLowerCase();
       arr = arr.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) 
+          p.name.toLowerCase().includes(q)
 
       );
     }
@@ -303,107 +318,129 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }) {
     return fd;
   }
 
+  function toFiniteNumber(v: unknown): number | null {
+    const n = typeof v === "string" ? Number(v) : (v as number);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function validateFields() {
+    if (!fCategory || !fCategory.trim()) return t("Category is required.", "الفئة مطلوبة.");
+    if (!fName || !fName.trim()) return t("Name is required.", "الاسم مطلوب.");
+
+    const price = toFiniteNumber(fPriceEach);
+    if (price == null) return t("Price must be a number.", "يجب أن يكون السعر رقمًا.");
+    if (price <= 0) return t("Price must be positive.", "يجب أن يكون السعر موجبًا.");
+
+    const weight = toFiniteNumber(fWeight);
+    if (weight == null) return t("Weight must be a number.", "يجب أن يكون الوزن رقمًا.");
+    if (weight <= 0) return t("Weight must be positive.", "يجب أن يكون الوزن موجبًا.");
+
+    return null;
+  }
+
+  function mapApiToProduct(input: unknown, lang: "en" | "ar"): Product | null {
+    if (!input || typeof input !== "object") return null;
+
+    // Case 1: multilingual object (has en + ar). Use your existing normalize()
+    if ("en" in (input as any) && "ar" in (input as any)) {
+      const normalized = normalize([input as RawProduct], lang);
+      return normalized?.[0] ?? null;
+    }
+
+    // Case 2: LangProduct
+    const p = input as Partial<LangProduct>;
+    if (p.id == null || p.category == null || p.name == null || p.image == null) return null;
+
+    const priceEach = toFiniteNumber(p.price_each);
+    const weight = toFiniteNumber(p.weight);
+    if (priceEach == null || weight == null) return null;
+
+    return {
+      id: p.id,
+      category: p.category,
+      name: p.name,
+      image: p.image,
+      priceEach,
+      description: p.description ?? "",
+      weight,
+      createdAt: p.created_at ?? new Date().toISOString(),
+      updatedAt: p.updated_at ?? new Date().toISOString(),
+      tiers: p.quantity ?? [],
+    };
+  }
+
+  function buildTiers() {
+    // assumes t1_* etc. are in scope; otherwise pass them in
+    const tiers: QuantityTier[] = [];
+    if (t1_from || t1_to || t1_equal) tiers.push({ from: t1_from, to: t1_to, equal: t1_equal });
+    if (t2_from || t2_to || t2_equal) tiers.push({ from: t2_from, to: t2_to, equal: t2_equal });
+    // NOTE: you used `total` for the third tier; keep or change to `equal` intentionally:
+    if (t3_from || t3_to || t3_total) tiers.push({ from: t3_from, to: t3_to, total: t3_total });
+    return tiers;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormErr(null);
 
-    if (!fCategory.trim()) return setFormErr(t("Category is required.", "الفئة مطلوبة."));
-    if (!fName.trim()) return setFormErr(t("Name is required.", "الاسم مطلوب."));
-    if (!fPriceEach || isNaN(Number(fPriceEach))) return setFormErr(t("Price must be a number.", "يجب أن يكون السعر رقمًا."));
-    if (!fWeight || isNaN(Number(fWeight))) return setFormErr(t("Weight must be a number.", "يجب أن يكون الوزن رقمًا."));
+    const validationErr = validateFields();
+    if (validationErr) {
+      setFormErr(validationErr);
+      return;
+    }
 
     const isEdit = editingId !== null;
-    const url = isEdit ? `${API}/${editingId}` : API;
-    const method = "POST";
+
+    const nowISO = new Date().toISOString();
 
     try {
       setSubmitting(true);
       const formdata = buildFormData();
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${TOKEN}`,
-          // DO NOT set Content-Type for FormData; browser sets boundary
-          Accept: "application/json",
-        },
-        body: formdata,
-      });
-
-      if (!res.ok) {
-        const txt = await res.json() ;
-        throw new Error(` ${txt.message}`);
-      }
-
+      const json = (await editAdminProduct(formdata, (isEdit && editingId))) as ApiCreateOrUpdate;
       // Try parse returned row
-      let returned: Product | null = null;
-      try {
-        const json = (await res.json()) as ApiCreateOrUpdate;
-        const anyData = (json.data ?? null) as any;
-        if (anyData) {
-          if ("en" in anyData && "ar" in anyData) {
-            returned = normalize([anyData as RawProduct], lang)[0];
-          } else {
-            const p = anyData as LangProduct;
-            returned = {
-              id: p.id,
-              category: p.category,
-              name: p.name,
-              image: p.image,
-              priceEach: money(p.price_each),
-              description: p.description,
-              weight: num(p.weight),
-              createdAt: p.created_at,
-              updatedAt: p.updated_at,
-              tiers: p.quantity || [],
-            };
-          }
-        }
-      } catch {
-        // ignore parse errors; we’ll fallback
-      }
-
-      const nowISO = new Date().toISOString();
+      let returned = mapApiToProduct(json?.data, lang);
 
       if (isEdit) {
+        const baseCreatedAt =
+          records.find((r) => r.id === editingId)?.createdAt ?? nowISO;
+
         const updatedLocal: Product =
-          returned || {
+          returned ?? {
             id: editingId!,
             category: fCategory.trim(),
             name: fName.trim(),
-            image: fImage.trim(),
-            priceEach: Number(fPriceEach),
-            description: fDescription.trim(),
-            weight: Number(fWeight),
-            createdAt: records.find((r) => r.id === editingId)?.createdAt || nowISO,
+            image: fImage?.trim(),
+            priceEach: toFiniteNumber(fPriceEach)!,
+            description: fDescription?.trim() ?? "",
+            weight: toFiniteNumber(fWeight)!,
+            createdAt: baseCreatedAt,
             updatedAt: nowISO,
-            tiers: [
-              ...(t1_from || t1_to || t1_equal ? [{ from: t1_from, to: t1_to, equal: t1_equal }] : []),
-              ...(t2_from || t2_to || t2_equal ? [{ from: t2_from, to: t2_to, equal: t2_equal }] : []),
-              ...(t3_from || t3_to || t3_total ? [{ from: t3_from, to: t3_to, total: t3_total }] : []),
-            ],
+            tiers: buildTiers(),
           };
+
         setRecords((prev) =>
           prev.map((r) => (r.id === editingId ? { ...r, ...updatedLocal } : r))
         );
       } else {
+        const tempId =
+          typeof crypto !== "undefined" && "getRandomValues" in crypto
+            ? crypto.getRandomValues(new Uint32Array(1))[0] // secure random 32-bit number
+            : Date.now();
+
         const createdLocal: Product =
-          returned || {
-            id: Math.floor(Math.random() * 1e9),
+          returned ?? {
+            id: tempId,
             category: fCategory.trim(),
             name: fName.trim(),
-            image: fImage.trim(),
-            priceEach: Number(fPriceEach),
-            description: fDescription.trim(),
-            weight: Number(fWeight),
+            image: fImage?.trim(),
+            priceEach: toFiniteNumber(fPriceEach)!,
+            description: fDescription?.trim() ?? "",
+            weight: toFiniteNumber(fWeight)!,
             createdAt: nowISO,
             updatedAt: nowISO,
-            tiers: [
-              ...(t1_from || t1_to || t1_equal ? [{ from: t1_from, to: t1_to, equal: t1_equal }] : []),
-              ...(t2_from || t2_to || t2_equal ? [{ from: t2_from, to: t2_to, equal: t2_equal }] : []),
-              ...(t3_from || t3_to || t3_total ? [{ from: t3_from, to: t3_to, total: t3_total }] : []),
-            ],
+            tiers: buildTiers(),
           };
+
         setRecords((prev) => [createdLocal, ...prev]);
         setTotal((n) => n + 1);
       }
@@ -419,14 +456,77 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }) {
     }
   }
 
-  function onDelete(id: number) {
-    // Optional: implement DELETE if needed
-    // fetch(`${API}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${TOKEN}` }})
+  async function onDelete(id: number) {
+    // (1) snapshot for rollback
+    const prevRecords = records;
+    const prevTotal = total;
+
+    // (2) optimistic UI
+    setRecords(r => r.filter(p => p.id !== id));
+    setTotal(n => Math.max(0, n - 1));
+
+    try {
+      await deleteAdminProduct(id)
+
+      // (3) background revalidate — don't flip the global spinner
+      void silentReload(); // defined below
+    } catch (e: any) {
+      // (4) rollback on failure
+      setRecords(prevRecords);
+      setTotal(prevTotal);
+      setError(e?.message || "Failed to delete");
+    }
   }
 
-  useEffect(()=>{
+  // Silent reload that doesn't show the big loading UI
+  async function silentReload() {
+    try {
+      const json = (await getAdminProduct()) as ApiList;
+      setApiData(json);
+      setRecords(normalize(json.data.data || [], lang));
+      setTotal(json.data.total || 0);
+    } catch {
+      // ignore silent reload errors; UI is already updated optimistically
+    }
+  }
+  async function logout() {
+    setPageload(true)
+
+    try {
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+
+      if (!res.ok) {
+        // If backend/route fails, still force logout on client
+        const faild = await res.json()
+        console.log(JSON.parse(faild.error))
+        setError(`Logout failed: ${JSON.parse(faild.error).message}`);
+      }
+
+      // Either way, clear client state and send user to login
+      window.location.href = "/admin/login";
+    } catch (err) {
+      setError(`Logout error: ${err}`);
+      // still redirect to login (so user isn't stuck)
+      window.location.href = "/admin/login";
+    } finally {
+      setPageload(true)
+    }
+  }
+
+
+  useEffect(() => {
     setRecords(normalize(apiData?.data.data || [], lang));
   }, [lang])
+
+  {
+    if (pageload) {
+      return (
+        <div className="h-screen bg-white flex justify-center items-center">
+          <div className="loader"></div>
+        </div>
+      )
+    }
+  }
 
   return (
     <section className="min-h-screen w-full bg-[#f6f7f8] px-6 py-10 text-slate-900">
@@ -453,6 +553,12 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }) {
               className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
             >
               <Plus className="h-4 w-4" /> {t("Add product", "إضافة منتج")}
+            </button>
+            <button
+              onClick={logout}
+              className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
+            >
+              <LogOut className="h-4 w-4" /> {t("Logout", "إضافة منتج")}
             </button>
           </div>
         </div>
