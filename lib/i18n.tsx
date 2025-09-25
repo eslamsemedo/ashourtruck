@@ -98,7 +98,7 @@ const en: Dict = {
   readMore: 'Read more',
   // Newsletter
   stayInLoop: 'Stay in the loop',
-  newsletterHeadline: 'Join the RPM Club',
+  newsletterHeadline: 'Join the Ashour Club',
   newsletterTagline: 'Get 10% off your first order + exclusive deals',
   emailAddress: 'Email address',
   emailPlaceholder: 'you@example.com',
@@ -279,7 +279,7 @@ const ar: Dict = {
   readMore: 'اقرأ المزيد',
   // Newsletter
   stayInLoop: 'ابقَ على اطلاع',
-  newsletterHeadline: 'انضم إلى نادي RPM',
+  newsletterHeadline: 'انضم إلى نادي عاشور',
   newsletterTagline: 'احصل على خصم 10% على أول طلب وصفقات حصرية',
   emailAddress: 'عنوان البريد الإلكتروني',
   emailPlaceholder: 'you@example.com',

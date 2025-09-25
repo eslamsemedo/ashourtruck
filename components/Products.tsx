@@ -16,7 +16,7 @@ import DeleteConfirm from './deleteConfirm';
 // Component
 // =====================================================
 
-const AdminProducts = memo(function AdminProducts({payload, refresh}: {payload: ApiPayload, refresh: ()=>{}}) {
+const AdminProduct = memo(function AdminProducts({payload, refresh}: {payload: ApiPayload, refresh: ()=>{}}) {
   // UI state
   const [locale, setLocale] = useState<"en" | "ar">("en");
   const [query, setQuery] = useState("");
@@ -472,4 +472,4 @@ const AdminProducts = memo(function AdminProducts({payload, refresh}: {payload: 
   );
 });
 
-export default AdminProducts;
+export default AdminProduct;

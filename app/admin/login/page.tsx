@@ -152,7 +152,7 @@ export default function AdminLoginPage() {
       });
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({ error: "Login failed" }));
-        throw new Error(error || "Login failed");
+        throw new Error(JSON.parse(error).message || "Login failed");
       }
       router.replace(next);
       router.refresh();

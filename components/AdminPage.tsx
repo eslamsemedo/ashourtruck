@@ -7,7 +7,7 @@ import { ApiPayload } from '@/types/products';
 
 
 
-export default function AdminPage() {
+export default function AdminPag() {
   const [payload, setPayload] = useState<ApiPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

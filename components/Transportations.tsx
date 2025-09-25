@@ -5,11 +5,14 @@ import {
   Search,
   Plus,
   Loader2,
-  Pencil,
-  Trash2,
   Globe2,
   X,
 } from "lucide-react";
+import {
+  deleteAdminTransportations,
+  editOrAddAdminTransportations,
+  getAdminTransportations,
+} from "@/lib/api";
 
 /** ============================
  * Admin — Transportations
@@ -18,7 +21,7 @@ import {
  * - Add transport (modal + POST)
  * - Edit transport (same modal + PUT)
  * - EN/AR UI toggle
- * - Light rounded admin theme
+ * - Table shows ONLY: Zone | Weight | Price
  * ============================ */
 
 type Transport = {
@@ -42,14 +45,6 @@ interface ApiCreateOrUpdate {
   message: Record<string, string>;
   data?: Transport;
 }
-
-const API =
-  "https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/admin/transportations";
-
-// ⚠️ For production, DO NOT ship tokens to the browser.
-// Put this behind a Next.js API route or use server actions/env vars.
-const TOKEN =
-  "9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a";
 
 const money = (n: string) =>
   Number.isFinite(parseFloat(n)) ? parseFloat(n) : 0;
@@ -85,24 +80,12 @@ export default function AdminTransportations({
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(API, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          cache: "no-store",
-          signal: ctrl.signal,
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as ApiList;
+        const json = (await getAdminTransportations()) as ApiList;
         setRecords(json.data.data || []);
         setTotal(json.data.total || 0);
         setError(null);
       } catch (e: any) {
-        if (e.name !== "AbortError")
-          setError(e?.message || "Failed to load");
+        if (e.name !== "AbortError") setError(e?.message || "Failed to load");
       } finally {
         setLoading(false);
       }
@@ -117,8 +100,34 @@ export default function AdminTransportations({
     return records.filter((r) => r.zone.toLowerCase().includes(q));
   }, [records, search]);
 
-  // Placeholder for delete if you add it later
-  function onDelete(id: number) {}
+  // Delete with optimistic UI (not shown in table, but kept for parity)
+  async function onDelete(id: number) {
+    const prevRecords = [...records];
+    const prevTotal = total;
+
+    setRecords((r) => r.filter((p) => p.id !== id));
+    setTotal((n) => Math.max(0, n - 1));
+
+    try {
+      await deleteAdminTransportations(id);
+      void silentReload();
+    } catch (e: any) {
+      setRecords(prevRecords);
+      setTotal(prevTotal);
+      setError(e?.message || "Failed to delete transportation.");
+    }
+  }
+
+  async function silentReload() {
+    try {
+      const json = (await getAdminTransportations()) as ApiList;
+      setRecords(json.data.data || []);
+      setTotal(json.data.total || 0);
+      setError(null);
+    } catch (e: any) {
+      setError(e?.message || "Failed to reload data after deletion.");
+    }
+  }
 
   const t = (en: string, ar: string) => (lang === "ar" ? ar : en);
 
@@ -135,101 +144,129 @@ export default function AdminTransportations({
     setEditingId(row.id);
     setZone(row.zone);
     setWeightKg(row.weight_kg); // already "500.000"
-    setPrice(row.price);        // already "120.00"
+    setPrice(row.price); // already "120.00"
     setFormErr(null);
     setOpen(true);
+  }
+
+  function validateTransportationFields(): string | null {
+    if (!zone.trim()) return t("Zone is required.", "المنطقة مطلوبة.");
+    if (!weightKg || isNaN(Number(weightKg)))
+      return t("Weight must be a number.", "يجب أن يكون الوزن رقمًا.");
+    if (!price || isNaN(Number(price)))
+      return t("Price must be a number.", "يجب أن يكون السعر رقمًا.");
+    return null;
+  }
+
+  // IMPORTANT: match Transport + backend expectations
+  function buildTransportationFormData() {
+    return {
+      zone: zone.trim(),
+      weight: Number(weightKg).toFixed(3), // "500.000"
+      price: Number(price).toFixed(2), // "120.00"
+    };
+  }
+
+  function mapApiToTransport(
+    raw?: Partial<Transport>
+  ): Transport | undefined {
+    if (!raw) return undefined;
+    const now = new Date().toISOString();
+
+    const weight_kg =
+      (raw as any).weight_kg ??
+      (typeof (raw as any).weight === "string"
+        ? (raw as any).weight.replace(/\s*kg$/i, "")
+        : undefined);
+
+    const priceStr =
+      typeof (raw as any).price === "number"
+        ? (raw as any).price.toFixed(2)
+        : typeof (raw as any).price === "string"
+        ? Number((raw as any).price).toFixed(2)
+        : undefined;
+
+    if (raw.id == null || raw.zone == null) return undefined;
+
+    const w = weight_kg != null ? Number(weight_kg) : 0;
+
+    return {
+      id: Number(raw.id),
+      admin_id: Number((raw as any).admin_id ?? 1),
+      zone: String(raw.zone),
+      weight_kg: w.toFixed(3),
+      price: priceStr ?? "0.00",
+      created_at: (raw as any).created_at ?? now,
+      updated_at: (raw as any).updated_at ?? now,
+      weight: `${w.toFixed(0)} kg`,
+    };
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormErr(null);
 
-    if (!zone.trim())
-      return setFormErr(t("Zone is required.", "المنطقة مطلوبة."));
-    if (!weightKg || isNaN(Number(weightKg)))
-      return setFormErr(
-        t("Weight must be a number.", "يجب أن يكون الوزن رقمًا.")
-      );
-    if (!price || isNaN(Number(price)))
-      return setFormErr(
-        t("Price must be a number.", "يجب أن يكون السعر رقمًا.")
-      );
+    const validationErr = validateTransportationFields();
+    if (validationErr) return setFormErr(validationErr);
+
+    const isEdit = editingId !== null;
+    const nowISO = new Date().toISOString();
 
     try {
       setSubmitting(true);
-      const body = {
-        zone: zone.trim(),
-        weight_kg: Number(weightKg).toFixed(3), // "500.000"
-        price: Number(price).toFixed(2),        // "120.00"
-      };
 
-      const isEdit = editingId !== null;
-      const url = isEdit ? `${API}/${editingId}` : API;
-      const method = "POST";
+      const formData = buildTransportationFormData();
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${TOKEN}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
+      const apiRes = (await editOrAddAdminTransportations(
+        formData,
+        isEdit && editingId
+      )) as ApiCreateOrUpdate;
 
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`HTTP ${res.status}: ${txt}`);
-      }
+      const returned = mapApiToTransport(apiRes?.data);
 
-      // Try to parse returned row; fallback to local merge
-      let returned: Transport | undefined;
-      try {
-        const json = (await res.json()) as ApiCreateOrUpdate;
-        returned = json.data;
-      } catch {
-        // ignore if API returns no JSON body
-      }
-
-      const nowISO = new Date().toISOString();
       if (isEdit) {
-        const updatedPartial: Transport = {
-          id: editingId!,
-          admin_id: 1,
-          zone: zone.trim(),
-          weight_kg: Number(weightKg).toFixed(3),
-          price: Number(price).toFixed(2),
-          created_at:
-            returned?.created_at ??
-            records.find((r) => r.id === editingId)?.created_at ??
-            nowISO,
-          updated_at: returned?.updated_at ?? nowISO,
-          weight: `${Number(weightKg)} kg`,
-        };
-        const updated = returned ?? updatedPartial;
+        const baseCreatedAt =
+          records.find((r) => r.id === editingId)?.created_at ?? nowISO;
 
-        // Optimistic update in list
-        setRecords((prev) =>
-          prev.map((r) => (r.id === editingId ? { ...r, ...updated } : r))
-        );
-      } else {
-        const newRow: Transport =
+        const updatedLocal: Transport =
           returned ??
           ({
-            id: Math.floor(Math.random() * 1e9),
+            id: editingId!,
+            admin_id: 1,
+            zone: zone.trim(),
+            weight_kg: Number(weightKg).toFixed(3),
+            price: Number(price).toFixed(2),
+            created_at: baseCreatedAt,
+            updated_at: nowISO,
+            weight: `${Number(weightKg).toFixed(0)} kg`,
+          } as Transport);
+
+        setRecords((prev) =>
+          prev.map((r) => (r.id === editingId ? { ...r, ...updatedLocal } : r))
+        );
+      } else {
+        const tempId =
+          typeof crypto !== "undefined" && "getRandomValues" in crypto
+            ? crypto.getRandomValues(new Uint32Array(1))[0]
+            : Date.now();
+
+        const createdLocal: Transport =
+          returned ??
+          ({
+            id: tempId,
             admin_id: 1,
             zone: zone.trim(),
             weight_kg: Number(weightKg).toFixed(3),
             price: Number(price).toFixed(2),
             created_at: nowISO,
             updated_at: nowISO,
-            weight: `${Number(weightKg)} kg`,
+            weight: `${Number(weightKg).toFixed(0)} kg`,
           } as Transport);
-        setRecords((prev) => [newRow, ...prev]);
+
+        setRecords((prev) => [createdLocal, ...prev]);
         setTotal((n) => n + 1);
       }
 
-      // reset + close
       setZone("");
       setWeightKg("");
       setPrice("");
@@ -258,26 +295,20 @@ export default function AdminTransportations({
               )}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setLang(lang === "en" ? "ar" : "en")}
               className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold shadow"
             >
-              <Globe2 className="h-4 w-4" />{" "}
-              {lang === "en" ? "العربية" : "English"}
-            </button>
-            <button
-              onClick={openAddModal}
-              className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
-            >
-              <Plus className="h-4 w-4" /> {t("Add transport", "إضافة شحن")}
+              <Globe2 className="h-4 w-4" /> {lang === "en" ? "العربية" : "English"}
             </button>
           </div>
         </div>
 
         {/* Controls (search + total) */}
-        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-12">
-          <div className="md:col-span-10">
+        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-9">
+          <div className="md:col-span-6">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
@@ -288,12 +319,18 @@ export default function AdminTransportations({
               />
             </div>
           </div>
-          <div className="md:col-span-2 flex items-center text-sm text-slate-500">
-            {t("Total:", "الإجمالي:")} {total}
-          </div>
+            <div className="md:col-span-1 flex items-center text-sm text-slate-500">
+              {t("Total:", "الإجمالي:")} {total}
+            </div>
+            <button
+              onClick={openAddModal}
+              className="inline-flex max-w-[150px] col-span-2 items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
+            >
+              <Plus className="h-4 w-4" /> {t("Add transport", "إضافة شحن")}
+            </button>
         </div>
 
-        {/* Table */}
+        {/* Table — ONLY Zone | Weight | Price */}
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
@@ -302,15 +339,12 @@ export default function AdminTransportations({
                   <th className="px-5 py-3">{t("Zone", "المنطقة")}</th>
                   <th className="px-5 py-3">{t("Weight (kg)", "الوزن (كجم)")}</th>
                   <th className="px-5 py-3">{t("Price", "السعر")}</th>
-                  <th className="px-5 py-3">{t("Created", "تاريخ الإنشاء")}</th>
-                  <th className="px-5 py-3">{t("Updated", "تاريخ التحديث")}</th>
-                  <th className="px-5 py-3 text-right">{t("Actions", "إجراءات")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {loading && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-10">
+                    <td colSpan={3} className="px-5 py-10">
                       <div className="flex items-center justify-center gap-2 text-slate-500">
                         <Loader2 className="h-4 w-4 animate-spin" />{" "}
                         {t("Loading…", "جارٍ التحميل…")}
@@ -320,20 +354,14 @@ export default function AdminTransportations({
                 )}
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-5 py-10 text-center text-slate-500"
-                    >
-                      {t(
-                        "No transport records found.",
-                        "لا توجد سجلات شحن."
-                      )}
+                    <td colSpan={3} className="px-5 py-10 text-center text-slate-500">
+                      {t("No transport records found.", "لا توجد سجلات شحن.")}
                     </td>
                   </tr>
                 )}
                 {!loading &&
-                  filtered.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50/60">
+                  filtered.map((r,i) => (
+                    <tr key={i} className="hover:bg-slate-50/60">
                       <td className="px-5 py-4 font-medium text-slate-900">
                         {r.zone}
                       </td>
@@ -342,30 +370,6 @@ export default function AdminTransportations({
                       </td>
                       <td className="px-5 py-4 font-semibold">
                         ${money(r.price).toFixed(2)}
-                      </td>
-                      <td className="px-5 py-4 text-slate-600">
-                        {new Date(r.created_at).toLocaleString()}
-                      </td>
-                      <td className="px-5 py-4 text-slate-600">
-                        {new Date(r.updated_at).toLocaleString()}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEditModal(r)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />{" "}
-                            {t("Edit", "تعديل")}
-                          </button>
-                          <button
-                            onClick={() => onDelete(r.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />{" "}
-                            {t("Delete", "حذف")}
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   ))}
@@ -460,9 +464,7 @@ export default function AdminTransportations({
                   disabled={submitting}
                   className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 >
-                  {submitting && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {editingId === null ? t("Save", "حفظ") : t("Update", "تحديث")}
                 </button>
               </div>

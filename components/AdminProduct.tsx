@@ -12,6 +12,7 @@ import {
   Tag,
   Layers,
   LogOut,
+  ArrowRight,
 } from "lucide-react";
 
 /** ============================
@@ -90,7 +91,7 @@ const TOKEN =
   "9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a";
 
 
-import { deleteAdminProduct, editAdminProduct, getAdminProduct } from "@/lib/api";
+import { deleteAdminProduct, editOrAddAdminProduct, getAdminProduct } from "@/lib/api";
 
 const money = (n?: string) => {
   const x = Number.parseFloat(n || "0");
@@ -174,7 +175,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
     (async () => {
       try {
         setLoading(true);
-        const json = await getAdminProduct();
+        const json = await getAdminProduct() as ApiList;
         if (cancelled) return;
         setApiData(json);
         setRecords(normalize(json.data.data ?? [], lang));
@@ -396,7 +397,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
     try {
       setSubmitting(true);
       const formdata = buildFormData();
-      const json = (await editAdminProduct(formdata, (isEdit && editingId))) as ApiCreateOrUpdate;
+      const json = (await editOrAddAdminProduct(formdata, (isEdit && editingId))) as ApiCreateOrUpdate;
       // Try parse returned row
       let returned = mapApiToProduct(json?.data, lang);
 
@@ -489,44 +490,12 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
       // ignore silent reload errors; UI is already updated optimistically
     }
   }
-  async function logout() {
-    setPageload(true)
-
-    try {
-      const res = await fetch(`/api/auth/logout`, { method: "POST" });
-
-      if (!res.ok) {
-        // If backend/route fails, still force logout on client
-        const faild = await res.json()
-        console.log(JSON.parse(faild.error))
-        setError(`Logout failed: ${JSON.parse(faild.error).message}`);
-      }
-
-      // Either way, clear client state and send user to login
-      window.location.href = "/admin/login";
-    } catch (err) {
-      setError(`Logout error: ${err}`);
-      // still redirect to login (so user isn't stuck)
-      window.location.href = "/admin/login";
-    } finally {
-      setPageload(true)
-    }
-  }
 
 
   useEffect(() => {
     setRecords(normalize(apiData?.data.data || [], lang));
   }, [lang])
 
-  {
-    if (pageload) {
-      return (
-        <div className="h-screen bg-white flex justify-center items-center">
-          <div className="loader"></div>
-        </div>
-      )
-    }
-  }
 
   return (
     <section className="min-h-screen w-full bg-[#f6f7f8] px-6 py-10 text-slate-900">
@@ -541,30 +510,35 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
               {t("Manage products, categories, price & quantity tiers.", "إدارة المنتجات والفئات والأسعار ومستويات الكميات.")}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Existing Buttons */}
             <button
               onClick={() => setLang(lang === "en" ? "ar" : "en")}
               className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-semibold shadow"
             >
               <Globe2 className="h-4 w-4" /> {lang === "en" ? "العربية" : "English"}
             </button>
-            <button
-              onClick={openAdd}
-              className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
+
+            
+
+            {/* New Transportation Button */}
+            {/* <button
+              onClick={() => window.location.href = "/admin/transportations"}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
             >
-              <Plus className="h-4 w-4" /> {t("Add product", "إضافة منتج")}
-            </button>
-            <button
+              <ArrowRight className="h-4 w-4" /> {t("Transportations", "النقل")}
+            </button> */}
+            {/* <button
               onClick={logout}
-              className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
+              className="inline-flex items-center gap-2 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-red-700"
             >
               <LogOut className="h-4 w-4" /> {t("Logout", "إضافة منتج")}
-            </button>
+            </button> */}
           </div>
         </div>
 
         {/* Controls */}
-        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-12">
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-9">
           {/* Search */}
           <div className="md:col-span-6">
             <div className="relative">
@@ -575,33 +549,19 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
                 placeholder={t("Search by name", "ابحث بالاسم")}
                 className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm outline-none placeholder:text-slate-400 focus:border-slate-300"
               />
+
             </div>
           </div>
-
-          {/* Price range */}
-          {/* <div className="md:col-span-3 grid grid-cols-2 gap-3">
-            <input
-              value={priceMin}
-              onChange={(e) => setPriceMin(e.target.value)}
-              type="number"
-              step="0.01"
-              placeholder={t("Min $", "الحد الأدنى $")}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-slate-300"
-            />
-            <input
-              value={priceMax}
-              onChange={(e) => setPriceMax(e.target.value)}
-              type="number"
-              step="0.01"
-              placeholder={t("Max $", "الحد الأقصى $")}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-slate-300"
-            />
-          </div> */}
-
           {/* Total */}
-          <div className="md:col-span-3 flex items-center text-sm text-slate-500">
+          <div className="md:col-span-1 flex items-center text-sm text-slate-500">
             {t("Total:", "الإجمالي:")} {total}
           </div>
+          <button
+            onClick={openAdd}
+            className="inline-flex max-w-[150px] col-span-2 items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
+          >
+            <Plus className="h-4 w-4" /> {t("Add product", "إضافة منتج")}
+          </button>
         </div>
 
         {/* Category chips */}
@@ -634,6 +594,11 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
             </button>
           )}
         </div>
+        {error && (
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* Table */}
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -680,7 +645,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
                           </div>
                           <div>
                             <div className="font-medium text-slate-900">{p.name}</div>
-                            <div className="max-w-[420px] truncate text-xs text-slate-500">
+                            <div className="max-w-[120px] truncate text-xs text-slate-500">
                               {p.description}
                             </div>
                           </div>
@@ -695,7 +660,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
                       <td className="px-5 py-4">{p.weight.toFixed(3)}</td>
                       <td className="px-5 py-4">
                         {p.tiers && p.tiers.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-1.5 min-w-[190px]">
                             {p.tiers.map((t, idx) => (
                               <span
                                 key={idx}
@@ -743,11 +708,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
           </div>
         </div>
 
-        {error && (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+
       </div>
 
       {/* Add/Edit Modal (with 3 quantity tiers) */}

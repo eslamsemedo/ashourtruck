@@ -283,38 +283,38 @@ const container = (simple: boolean) => ({
 const item = (simple: boolean): Variants =>
   simple
     ? {
-        hidden: { opacity: 0 },
-        show: { opacity: 1 }
-      }
+      hidden: { opacity: 0 },
+      show: { opacity: 1 }
+    }
     : {
-        hidden: { opacity: 0, y: 24 },
-        show: {
-          opacity: 1,
-          y: 0,
-          transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
-        }
-      };
+      hidden: { opacity: 0, y: 24 },
+      show: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+      }
+    };
 
 // Float chips: disable infinite loop on mobile/reduced
 const float = (simple: boolean, delay = 0): MotionProps =>
   simple
     ? {
-        initial: { y: 0, opacity: 0 },
-        animate: { y: 0, opacity: 1, transition: { duration: 0.3, delay } }
-      }
+      initial: { y: 0, opacity: 0 },
+      animate: { y: 0, opacity: 1, transition: { duration: 0.3, delay } }
+    }
     : {
-        initial: { y: 20, opacity: 0 },
-        animate: {
-          y: [20, -10, 20],
-          opacity: 1,
-          transition: {
-            delay,
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }
+      initial: { y: 20, opacity: 0 },
+      animate: {
+        y: [20, -10, 20],
+        opacity: 1,
+        transition: {
+          delay,
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut"
         }
-      };
+      }
+    };
 
 const shine: Variants = {
   rest: { x: "-120%" },
@@ -333,10 +333,10 @@ export default function Hero() {
   const gridAnim = simple
     ? undefined
     : {
-        initial: { scale: 1 },
-        animate: { scale: 1.05 },
-        transition: { repeat: Infinity, repeatType: "mirror", duration: 8, ease: "easeInOut" }
-      };
+      initial: { scale: 1 },
+      animate: { scale: 1.05 },
+      transition: { repeat: Infinity, repeatType: "mirror", duration: 8, ease: "easeInOut" }
+    };
 
   return (
     <section className="relative min-h-[92vh] w-full overflow-hidden bg-black text-white">
@@ -466,6 +466,13 @@ export default function Hero() {
                   <span className="text-2xl font-black tracking-widest text-white flex justify-center items-center">
                     RPM
                   </span>
+                  {/* <Image
+                    src={"/logoCar.png"}  // Your logo path
+                    alt="logo"
+                    height={100}
+                    width={100}
+                    className="w-auto "  // Adjusted logo size
+                  /> */}
                 </motion.div>
               </div>
             </div>

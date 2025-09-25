@@ -54,10 +54,10 @@ const initialForm: CustomerForm = {
 export default function CartPage() {
   const dispatch = useDispatch();
   const cart = useSelector((s: RootState) => s.cart);
-  const totalW = useSelector((s:RootState) =>{
+  const totalW = useSelector((s: RootState) => {
     return s.cart.items
-    .map((v) => (v.weight ?? 0) * v.qty)
-    .reduce((acc, curr) => acc + curr, 0);
+      .map((v) => (v.weight ?? 0) * v.qty)
+      .reduce((acc, curr) => acc + curr, 0);
   })
   const { t, code: lang } = useT();
 
@@ -71,7 +71,7 @@ export default function CartPage() {
   // Transportation list + selection
   const [transports, setTransports] = React.useState<Transport[]>([]);
   const [selectedTransportKey, setSelectedTransportKey] = React.useState<string>("");
-  const makeTKey = React.useCallback((t: Transport, idx: number) => `${t.zone}|${t.weight_kg}|${t.price}|${idx}`,[ ]);
+  const makeTKey = React.useCallback((t: Transport, idx: number) => `${t.zone}|${t.weight_kg}|${t.price}|${idx}`, []);
   const selectedTransport = React.useMemo(() => {
     return transports.find((t, idx) => makeTKey(t, idx) === selectedTransportKey) ?? null;
   }, [transports, selectedTransportKey, makeTKey]);
@@ -116,7 +116,7 @@ export default function CartPage() {
   const [submitting, setSubmitting] = React.useState(false);
 
   const validate = (f: CustomerForm) => {
-    const e: Record<string,string> = {};
+    const e: Record<string, string> = {};
     if (!f.firstName.trim()) e.firstName = t("required");
     if (!f.lastName.trim()) e.lastName = t("required");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = t("invalidemail");
@@ -164,12 +164,12 @@ export default function CartPage() {
         },
         coupon: coupon || undefined,
         transportation: selectedTransport
-                    ? {
-                        zone: selectedTransport.zone,
-                        weight_kg: selectedTransport.weight_kg,
-                        price: Number.parseFloat(selectedTransport.price),
-                      }
-                    : undefined,
+          ? {
+            zone: selectedTransport.zone,
+            weight_kg: selectedTransport.weight_kg,
+            price: Number.parseFloat(selectedTransport.price),
+          }
+          : undefined,
         customer: {
           first_name: form.firstName,
           last_name: form.lastName,
@@ -190,16 +190,27 @@ export default function CartPage() {
       console.log('ORDER_PAYLOAD', payload);
       console.log('ORDER_PAYLOAD_JSON', JSON.stringify(payload, null, 2));
 
-      // Example: Send to your API route (uncomment + adjust path)
-      // const res = await fetch('/api/checkout', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(payload),
-      // });
-      // if (!res.ok) throw new Error(`Checkout failed: ${res.status}`);
+      // Send to the API endpoint
+      const res = await fetch('https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Checkout failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      console.log('Order Created:', data); // Log the response from the API
+
+      dispatch(clearCart())
 
       // Example: navigate to checkout after successful POST
-      // window.location.href = "/checkout";
+      window.location.href = "/shop";
 
       setOpen(false);
     } catch (err) {
@@ -405,7 +416,7 @@ export default function CartPage() {
               <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-3 text-base">
                 <dt className="font-semibold">{t("total")}</dt>
                 <dd className="text-xl font-extrabold">{currencyFmt.format(total)}</dd>
-                <dd className="text-xl font-extrabold">{}</dd>
+                <dd className="text-xl font-extrabold">{ }</dd>
               </div>
             </dl>
             <button
@@ -426,174 +437,174 @@ export default function CartPage() {
 
       {/* Checkout Modal */}
       <AnimatePresence>
-      {open && (
-        <motion.div
-          key="checkout-modal"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-black/60 p-0 sm:p-4"
-          aria-modal="true"
-          role="dialog"
-        >
-          {/* Card / Sheet */}
+        {open && (
           <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            className="relative w-full sm:max-w-2xl bg-neutral-900 border border-white/10 shadow-2xl sm:rounded-2xl sm:overflow-hidden rounded-t-2xl"
+            key="checkout-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-black/60 p-0 sm:p-4"
+            aria-modal="true"
+            role="dialog"
           >
-            {/* Scroll container: full-height sheet on mobile */}
-            <div className="max-h-[92svh] sm:max-h-[80vh] overflow-y-auto">
-              {/* Sticky header for mobile */}
-              <div className="sticky top-0 z-10 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/75 border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-lg sm:text-xl font-bold truncate">{t("shippingInformation") || "Shipping information"}</h3>
-                    <p className="mt-1 text-[11px] sm:text-xs text-white/60">{t("weUseThisToFulfill") || "We use this info to fulfill and contact you about your order."}</p>
+            {/* Card / Sheet */}
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 26 }}
+              className="relative w-full sm:max-w-2xl bg-neutral-900 border border-white/10 shadow-2xl sm:rounded-2xl sm:overflow-hidden rounded-t-2xl"
+            >
+              {/* Scroll container: full-height sheet on mobile */}
+              <div className="max-h-[92svh] sm:max-h-[80vh] overflow-y-auto">
+                {/* Sticky header for mobile */}
+                <div className="sticky top-0 z-10 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/75 border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-lg sm:text-xl font-bold truncate">{t("shippingInformation") || "Shipping information"}</h3>
+                      <p className="mt-1 text-[11px] sm:text-xs text-white/60">{t("weUseThisToFulfill") || "We use this info to fulfill and contact you about your order."}</p>
+                    </div>
+                    <button
+                      className="shrink-0 rounded-lg border border-white/10 p-2 text-white/80 hover:bg-white/10"
+                      onClick={() => setOpen(false)}
+                      aria-label={t("close") || "Close"}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
+                </div>
+
+                <form onSubmit={handleSubmit} id="checkout-form" className="px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
+                  {/* Name */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field
+                      label={t("firstName") || "First name"}
+                      name="firstName"
+                      value={form.firstName}
+                      onChange={(v) => setForm({ ...form, firstName: v })}
+                      error={errors.firstName}
+                      autoComplete="given-name"
+                    />
+                    <Field
+                      label={t("lastName") || "Last name"}
+                      name="lastName"
+                      value={form.lastName}
+                      onChange={(v) => setForm({ ...form, lastName: v })}
+                      error={errors.lastName}
+                      autoComplete="family-name"
+                    />
+                  </div>
+
+                  {/* Contact */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field
+                      label={t("email") || "Email"}
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={(v) => setForm({ ...form, email: v })}
+                      error={errors.email}
+                      autoComplete="email"
+                    />
+                    <Field
+                      label={t("phone") || "Phone"}
+                      name="phone"
+                      type="tel"
+                      value={form.phone}
+                      onChange={(v) => setForm({ ...form, phone: v })}
+                      error={errors.phone}
+                      autoComplete="tel"
+                    />
+                  </div>
+
+                  {/* Address */}
+                  <Field
+                    label={t("addressLine1") || "Address line 1"}
+                    name="addressLine1"
+                    value={form.addressLine1}
+                    onChange={(v) => setForm({ ...form, addressLine1: v })}
+                    error={errors.addressLine1}
+                    autoComplete="address-line1"
+                  />
+                  <Field
+                    label={t("addressLine2") || "Address line 2 (optional)"}
+                    name="addressLine2"
+                    value={form.addressLine2 || ""}
+                    onChange={(v) => setForm({ ...form, addressLine2: v })}
+                    autoComplete="address-line2"
+                  />
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <Field
+                      label={t("city") || "City"}
+                      name="city"
+                      value={form.city}
+                      onChange={(v) => setForm({ ...form, city: v })}
+                      error={errors.city}
+                      autoComplete="address-level2"
+                    />
+                    <Field
+                      label={t("state") || "State/Province"}
+                      name="state"
+                      value={form.state}
+                      onChange={(v) => setForm({ ...form, state: v })}
+                      autoComplete="address-level1"
+                    />
+                    <Field
+                      label={t("postalCode") || "Postal code"}
+                      name="postalCode"
+                      value={form.postalCode}
+                      onChange={(v) => setForm({ ...form, postalCode: v })}
+                      error={errors.postalCode}
+                      autoComplete="postal-code"
+                    />
+                  </div>
+
+                  <Field
+                    label={t("country") || "Country"}
+                    name="country"
+                    value={form.country}
+                    onChange={(v) => setForm({ ...form, country: v })}
+                    error={errors.country}
+                    autoComplete="country-name"
+                  />
+
+                  <Field
+                    label={t("orderNotes") || "Order notes (optional)"}
+                    name="notes"
+                    as="textarea"
+                    value={form.notes || ""}
+                    onChange={(v) => setForm({ ...form, notes: v })}
+                  />
+
+                  {/* Actions: sticky footer on mobile */}
+                  <div className="h-2" />
+                </form>
+              </div>
+
+              <div className="sticky bottom-0 z-10 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/75 border-t border-white/10 px-4 sm:px-6 py-3 sm:py-4">
+                <div className="flex items-center justify-end gap-2 sm:gap-3">
                   <button
-                    className="shrink-0 rounded-lg border border-white/10 p-2 text-white/80 hover:bg-white/10"
+                    type="button"
                     onClick={() => setOpen(false)}
-                    aria-label={t("close") || "Close"}
+                    className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10"
                   >
-                    <X className="h-4 w-4" />
+                    {t("cancel") || "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    form="checkout-form"
+                    disabled={submitting}
+                    className="rounded-xl bg-red-600 px-4 sm:px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submitting ? (t("processing") || "Processing…") : (t("confirmAndPay") || "Confirm & pay")}
                   </button>
                 </div>
               </div>
-
-              <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
-                {/* Name */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field
-                    label={t("firstName") || "First name"}
-                    name="firstName"
-                    value={form.firstName}
-                    onChange={(v) => setForm({ ...form, firstName: v })}
-                    error={errors.firstName}
-                    autoComplete="given-name"
-                  />
-                  <Field
-                    label={t("lastName") || "Last name"}
-                    name="lastName"
-                    value={form.lastName}
-                    onChange={(v) => setForm({ ...form, lastName: v })}
-                    error={errors.lastName}
-                    autoComplete="family-name"
-                  />
-                </div>
-
-                {/* Contact */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field
-                    label={t("email") || "Email"}
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={(v) => setForm({ ...form, email: v })}
-                    error={errors.email}
-                    autoComplete="email"
-                  />
-                  <Field
-                    label={t("phone") || "Phone"}
-                    name="phone"
-                    type="tel"
-                    value={form.phone}
-                    onChange={(v) => setForm({ ...form, phone: v })}
-                    error={errors.phone}
-                    autoComplete="tel"
-                  />
-                </div>
-
-                {/* Address */}
-                <Field
-                  label={t("addressLine1") || "Address line 1"}
-                  name="addressLine1"
-                  value={form.addressLine1}
-                  onChange={(v) => setForm({ ...form, addressLine1: v })}
-                  error={errors.addressLine1}
-                  autoComplete="address-line1"
-                />
-                <Field
-                  label={t("addressLine2") || "Address line 2 (optional)"}
-                  name="addressLine2"
-                  value={form.addressLine2 || ""}
-                  onChange={(v) => setForm({ ...form, addressLine2: v })}
-                  autoComplete="address-line2"
-                />
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <Field
-                    label={t("city") || "City"}
-                    name="city"
-                    value={form.city}
-                    onChange={(v) => setForm({ ...form, city: v })}
-                    error={errors.city}
-                    autoComplete="address-level2"
-                  />
-                  <Field
-                    label={t("state") || "State/Province"}
-                    name="state"
-                    value={form.state}
-                    onChange={(v) => setForm({ ...form, state: v })}
-                    autoComplete="address-level1"
-                  />
-                  <Field
-                    label={t("postalCode") || "Postal code"}
-                    name="postalCode"
-                    value={form.postalCode}
-                    onChange={(v) => setForm({ ...form, postalCode: v })}
-                    error={errors.postalCode}
-                    autoComplete="postal-code"
-                  />
-                </div>
-
-                <Field
-                  label={t("country") || "Country"}
-                  name="country"
-                  value={form.country}
-                  onChange={(v) => setForm({ ...form, country: v })}
-                  error={errors.country}
-                  autoComplete="country-name"
-                />
-
-                <Field
-                  label={t("orderNotes") || "Order notes (optional)"}
-                  name="notes"
-                  as="textarea"
-                  value={form.notes || ""}
-                  onChange={(v) => setForm({ ...form, notes: v })}
-                />
-
-                {/* Actions: sticky footer on mobile */}
-                <div className="h-2" />
-              </form>
-            </div>
-
-            <div className="sticky bottom-0 z-10 bg-neutral-900/95 backdrop-blur supports-[backdrop-filter]:bg-neutral-900/75 border-t border-white/10 px-4 sm:px-6 py-3 sm:py-4">
-              <div className="flex items-center justify-end gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10"
-                >
-                  {t("cancel") || "Cancel"}
-                </button>
-                <button
-                  type="submit"
-                  form="checkout-form"
-                  disabled={submitting}
-                  className="rounded-xl bg-red-600 px-4 sm:px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {submitting ? (t("processing") || "Processing…") : (t("confirmAndPay") || "Confirm & pay")}
-                </button>
-              </div>
-            </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
@@ -626,9 +637,8 @@ function Field({
         name={name}
         value={value}
         onChange={(e: any) => onChange(e.target.value)}
-        className={`w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-white/40 ${
-          error ? "border-red-500/60" : "border-white/10"
-        }`}
+        className={`w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-white/40 ${error ? "border-red-500/60" : "border-white/10"
+          }`}
         autoComplete={autoComplete}
         rows={as === "textarea" ? 4 : undefined}
         type={as === "textarea" ? undefined : type}

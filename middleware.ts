@@ -25,7 +25,7 @@ export function middleware(req: NextRequest) {
     const token = req.cookies.get(COOKIE_NAME)?.value;
     if (token) {
       const url = req.nextUrl.clone();
-      url.pathname = "/admin/products";
+      url.pathname = "/admin/control/products";
       return NextResponse.redirect(url);
       
     }
