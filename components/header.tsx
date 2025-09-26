@@ -26,9 +26,26 @@ const nav = [
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
   const active = pathname === href;
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Only handle hash links
+    if (href.startsWith('/#')) {
+      e.preventDefault();
+      const targetId = href.replace('/', '');
+      const element = document.querySelector(targetId);
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }
+  };
+
   return (
     <Link
       href={href}
+      onClick={handleClick}
       className={`text-sm ${active ? "text-white" : "text-white/70 hover:text-white"}`}
       aria-current={active ? "page" : undefined}
     >
@@ -137,7 +154,25 @@ export default function Header() {
           className="space-y-2 border-t border-white/10 bg-black px-6 py-4 md:hidden"
         >
           {nav.map((n) => (
-            <Link key={n.href} href={n.href} className="block text-sm text-white/70 hover:text-white" onClick={() => setOpen(false)}>
+            <Link
+              key={n.href}
+              href={n.href}
+              className="block text-sm text-white/70 hover:text-white"
+              onClick={(e) => {
+                if (n.href.startsWith('/#')) {
+                  e.preventDefault();
+                  const targetId = n.href.replace('/', '');
+                  const element = document.querySelector(targetId);
+                  if (element) {
+                    element.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  }
+                }
+                setOpen(false);
+              }}
+            >
               {t(n.key as any)}
             </Link>
           ))}

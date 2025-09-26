@@ -38,9 +38,11 @@ export default function Home() {
 
             {/* Image on the left */}
             <div className="w-full md:w-1/2">
-              <img
-                src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200"  // Replace with your actual image
+              <Image
+                src={"/img/red_truck.jpg"} // Replace with your actual image
                 alt="Car Accessories"
+                width={600}
+                height={400}
                 className="w-full h-auto object-cover rounded-lg shadow-xl transition-transform transform hover:scale-105"
               />
             </div>
@@ -65,9 +67,9 @@ export default function Home() {
       <div id="trust-support">
         <TrustSupport />
       </div>
-      <div id="blog-news">
+      {/* <div id="blog-news">
         <BlogNews />
-      </div>
+      </div> */}
       <div id="newsletter-signup">
         <NewsletterSignup />
       </div>

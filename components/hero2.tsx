@@ -457,23 +457,23 @@ export default function Hero() {
               )}
               {/* Center emblem */}
               <div className="relative z-10 flex h-full items-center justify-center">
-                <motion.div
+                <Image
+                  src={"/logoCar.png"}  // Your logo path
+                  alt="logo"
+                  height={350}
+                  width={350}
+                  className=""
+                  priority={true}
+                />
+                {/* <motion.div
                   initial={simple ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
                   animate={simple ? undefined : { scale: 1, opacity: 1 }}
-                  transition={{ duration: simple ? 0.2 : 0.8, ease: [0.22, 1, 0.36, 1] }}
-                  className="grid h-28 w-28 place-items-center rounded-full border border-white/20 bg-black/60 shadow-[0_0_120px_rgba(239,68,68,0.25)]"
+                  transition={{ duration: simple ? 0 : 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  className="grid   place-items-center rounded-full border border-white/20 bg-black/60 shadow-[0_0_120px_rgba(239,68,68,0.25)]"
                 >
-                  <span className="text-2xl font-black tracking-widest text-white flex justify-center items-center">
-                    RPM
-                  </span>
-                  {/* <Image
-                    src={"/logoCar.png"}  // Your logo path
-                    alt="logo"
-                    height={100}
-                    width={100}
-                    className="w-auto "  // Adjusted logo size
-                  /> */}
-                </motion.div>
+                  Wholesale & Retail for Car Accessories & Spare Parts
+                   البيع بالجملة والتجزئة لملحقات السيارات وقطع الغيار
+                </motion.div> */}
               </div>
             </div>
 

@@ -70,6 +70,14 @@ const TOKEN =
   "9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a";
 
 const STATUSES = ["pending", "confirmed", "paid", "cancelled", "refunded"] as const;
+const STATUS_FILTERS = [
+  { value: "all", labelEn: "All Orders", labelAr: "جميع الطلبات" },
+  { value: "pending", labelEn: "Pending", labelAr: "معلق" },
+  { value: "confirmed", labelEn: "Confirmed", labelAr: "مؤكد" },
+  { value: "paid", labelEn: "Paid", labelAr: "مدفوع" },
+  { value: "cancelled", labelEn: "Cancelled", labelAr: "ملغى" },
+  { value: "refunded", labelEn: "Refunded", labelAr: "مسترد" },
+];
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700 border-yellow-300",
@@ -259,12 +267,14 @@ export default function AdminOrders() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white py-3 px-4 text-sm outline-none focus:border-slate-300"
+              className={`w-full rounded-2xl py-3 px-4 text-sm font-medium border outline-none focus:ring-2 focus:ring-slate-300
+      ${statusColors[statusFilter] || "bg-slate-100 text-slate-700 border-slate-300"}`}
             >
-              <option value="all">{t("All Orders", "جميع الطلبات")}</option>
-              <option value="pending">{t("Pending", "معلق")}</option>
-              <option value="completed">{t("Completed", "مكتمل")}</option>
-              <option value="cancelled">{t("Cancelled", "ملغى")}</option>
+              {STATUS_FILTERS.map((s) => (
+                <option key={s.value} value={s.value} className="text-slate-800">
+                  {t(s.labelEn, s.labelAr)}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -317,7 +327,7 @@ export default function AdminOrders() {
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
                             className={`rounded-lg px-2 py-1.5 text-sm font-medium border outline-none focus:ring-2 focus:ring-slate-300
-        ${statusColors[order.status] || "bg-slate-100 text-slate-700 border-slate-300"}`}
+                            ${statusColors[order.status] || "bg-slate-100 text-slate-700 border-slate-300"}`}
                             disabled={updatingId === order.id}
                           >
                             {STATUSES.map((s) => (
