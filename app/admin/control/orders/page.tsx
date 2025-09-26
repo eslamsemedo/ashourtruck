@@ -9,6 +9,7 @@ import {
   X,
   Globe2, // 👈 added
 } from "lucide-react";
+import { changeOrderStatus } from "@/lib/api";
 
 /** ============================
  * Admin — Orders Table
@@ -68,6 +69,16 @@ const API =
 const TOKEN =
   "9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a";
 
+const STATUSES = ["pending", "confirmed", "paid", "cancelled", "refunded"] as const;
+
+const statusColors: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700 border-yellow-300",
+  confirmed: "bg-blue-100 text-blue-700 border-blue-300",
+  paid: "bg-green-100 text-green-700 border-green-300",
+  cancelled: "bg-red-100 text-red-700 border-red-300",
+  refunded: "bg-purple-100 text-purple-700 border-purple-300",
+};
+
 export default function AdminOrders() {
   // Language
   const [lang, setLang] = useState<"en" | "ar">("en");
@@ -79,6 +90,7 @@ export default function AdminOrders() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [viewMode, setViewMode] = React.useState<"items" | "fullOrder" | null>(
     null
   );
@@ -160,6 +172,41 @@ export default function AdminOrders() {
     setSelectedOrder(null);
     setViewMode(null);
   };
+
+  async function handleStatusChange(orderId: number, newStatus: string) {
+    // optimistic update
+    const previous = orders;
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+    );
+    setUpdatingId(orderId);
+
+    try {
+      // Adjust endpoint/method to match your API if different
+      // const res = await fetch(`${API}/${orderId}`, {
+      //   method: "PATCH",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${TOKEN}`,
+      //   },
+      //   body: JSON.stringify({ status: newStatus }),
+      // });
+
+      // if (!res.ok) {
+      //   throw new Error(`Failed to update status: ${res.status}`);
+      // }
+      await changeOrderStatus(orderId, newStatus);
+      setError(null);
+    } catch (err) {
+      // rollback on error
+      setOrders(previous);
+      setError(
+        t("Failed to update order status.", "فشل في تحديث حالة الطلب.")
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  }
 
   return (
     <section
@@ -264,22 +311,31 @@ export default function AdminOrders() {
                       <td className="px-5 py-4 font-semibold">
                         ${Number(order.total).toFixed(2)}
                       </td>
-                      <td className="px-5 py-4">{order.status}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                            className={`rounded-lg px-2 py-1.5 text-sm font-medium border outline-none focus:ring-2 focus:ring-slate-300
+        ${statusColors[order.status] || "bg-slate-100 text-slate-700 border-slate-300"}`}
+                            disabled={updatingId === order.id}
+                          >
+                            {STATUSES.map((s) => (
+                              <option key={s} value={s} className="text-slate-800">
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+
+                          {updatingId === order.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                          ) : null}
+                        </div>
+                      </td>
                       <td className="px-5 py-4">{fmtDate(order.created_at)}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => console.log("Edit Order", order.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
-                          >
-                            <Pencil className="h-3.5 w-3.5" /> {t("Edit", "تعديل")}
-                          </button>
-                          <button
-                            onClick={() => console.log("Delete Order", order.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" /> {t("Delete", "حذف")}
-                          </button>
+
                           <button
                             onClick={() => handleReviewItems(order)}
                             className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
@@ -289,7 +345,7 @@ export default function AdminOrders() {
                           </button>
                           <button
                             onClick={() => handleReviewFullOrder(order)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100"
+                            className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100"
                           >
                             <ArrowRight className="h-3.5 w-3.5" />{" "}
                             {t("Review Full Order", "مراجعة الطلب كاملًا")}

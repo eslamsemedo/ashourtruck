@@ -7,6 +7,8 @@ import {
   Loader2,
   Globe2,
   X,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   deleteAdminTransportations,
@@ -339,12 +341,13 @@ export default function AdminTransportations({
                   <th className="px-5 py-3">{t("Zone", "المنطقة")}</th>
                   <th className="px-5 py-3">{t("Weight (kg)", "الوزن (كجم)")}</th>
                   <th className="px-5 py-3">{t("Price", "السعر")}</th>
+                  <th className="px-5 py-3 text-right">{t("Actions", "إجراءات")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {loading && (
                   <tr>
-                    <td colSpan={3} className="px-5 py-10">
+                    <td colSpan={4} className="px-5 py-10">
                       <div className="flex items-center justify-center gap-2 text-slate-500">
                         <Loader2 className="h-4 w-4 animate-spin" />{" "}
                         {t("Loading…", "جارٍ التحميل…")}
@@ -354,14 +357,14 @@ export default function AdminTransportations({
                 )}
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-5 py-10 text-center text-slate-500">
+                    <td colSpan={4} className="px-5 py-10 text-center text-slate-500">
                       {t("No transport records found.", "لا توجد سجلات شحن.")}
                     </td>
                   </tr>
                 )}
                 {!loading &&
-                  filtered.map((r,i) => (
-                    <tr key={i} className="hover:bg-slate-50/60">
+                  filtered.map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-50/60">
                       <td className="px-5 py-4 font-medium text-slate-900">
                         {r.zone}
                       </td>
@@ -370,6 +373,22 @@ export default function AdminTransportations({
                       </td>
                       <td className="px-5 py-4 font-semibold">
                         ${money(r.price).toFixed(2)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(r)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> {t("Edit", "تعديل")}
+                          </button>
+                          <button
+                            onClick={() => onDelete(r.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> {t("Delete", "حذف")}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -397,7 +416,7 @@ export default function AdminTransportations({
               </h3>
               <button
                 className="rounded-lg p-2 hover:bg-slate-100"
-                onClick={() => !submitting && setOpen(false)}
+                onClick={() => !submitting && (setOpen(false), setEditingId(null))}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -453,7 +472,7 @@ export default function AdminTransportations({
               <div className="mt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={() => (setOpen(false), setEditingId(null))}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm"
                   disabled={submitting}
                 >

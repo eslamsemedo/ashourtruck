@@ -36,7 +36,6 @@ export function normalizeQuantityTiers(q: QuantityTier[]) {
     price: parseNumber(t.equal ?? t.total ?? "0"),
   }));
 }
-
 // Lightweight fuzzy includes
 export function includesI(str: string, needle: string) {
   return str.toLowerCase().includes(needle.trim().toLowerCase());

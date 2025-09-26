@@ -100,36 +100,7 @@ export default function AdminLoginPage() {
   // const [loading, setLoading] = useState(false);
   // const [error, setError] = useState<string | null>(null);
   // const search = useSearchParams();
-  const next = "/admin/products";
-
-  // async function handleSubmit(e: React.FormEvent) {
-  //   e.preventDefault();
-  //   setError(null);
-
-  //   if (!username.trim() || !password) {
-  //     setError("Username and password are required.");
-  //     return;
-  //   }
-
-  //   try {
-  //     setLoading(true);
-  //     const res = await fetch("/api/admin/login", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ username: username.trim(), password }),
-  //     });
-  //     if (!res.ok) {
-  //       const msg = await res.text();
-  //       throw new Error(msg || `HTTP ${res.status}`);
-  //     }
-  //     // success => cookie set by server; redirect
-  //     router.replace("/admin/transportations");
-  //   } catch (err: any) {
-  //     setError(err?.message || "Login failed.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
+  const next = "/admin/control/products";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
