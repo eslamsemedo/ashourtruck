@@ -1,5 +1,5 @@
 "use server"
-import { ApiList } from "@/components/AdminProduct";
+import { ApiPayload } from "@/types/products";
 import { cookies } from "next/headers";
 
 
@@ -62,7 +62,7 @@ export async function getAdminProduct() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const data: ApiList = await res.json()
+    const data: ApiPayload = await res.json()
 
     return data
 
@@ -295,3 +295,33 @@ export async function changeOrderStatus(id: number, status: string) {
 }
 
 
+export async function getAdminOrders() {
+  // const ctrl = new AbortController();
+  const cookieStore = cookies();
+  const token = (await cookieStore).get("admin_token")?.value;
+
+  const BACKEND_URL = process.env.BACKEND_URL
+  if (!BACKEND_URL) {
+    throw new Error("Missing BACKEND_URL in environment");
+  }
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/admin/orders`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      const txt = await res.json();
+      throw new Error(` ${txt.message}`);
+    }
+    const resData = await res.json()
+    return resData
+  } catch (e: any) {
+    throw new Error(`${e?.message || "Failed to load"}`)
+  }
+}

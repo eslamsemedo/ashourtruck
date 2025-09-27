@@ -1,23 +1,21 @@
-
-import React, { Suspense } from "react";
 import ShopPage from "@/components/shop";
 import { getProductsUser } from "@/lib/api";
+import { ProductRecord } from "@/types/products";
 
-export const dynamic = 'force-dynamic';           // opt into dynamic rendering
-// or:
-export const fetchCache = 'force-no-store';       // disable caching for all fetch in this route
-
-export default async function Page() {
-  let data;
-
+// Function to fetch products data
+async function getProducts() {
   try {
-    data = await getProductsUser("https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/products");
-  } catch (err) {
-    throw new Error()
+    const response = await getProductsUser("https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/products");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return []; // Return empty array if error occurs
   }
-
-  // console.log(data);
-
-  return <ShopPage data={data.data} />
 }
 
+// Server Component that fetches the data server-side
+export default async function Page() {
+  const data = await getProducts(); // Fetch products data on the server
+
+  return <ShopPage data={data} />;
+}

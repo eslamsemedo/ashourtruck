@@ -19,6 +19,7 @@ export type LocaleProduct = {
   quantity: QuantityTier[];
 };
 
+
 export type ProductRecord = {
   en: LocaleProduct;
   ar: LocaleProduct;
@@ -44,3 +45,8 @@ export type ApiPayload = {
   };
 };
 
+export type ApiCreateOrUpdate = {
+  status: string;
+  message: Record<string, string>;
+  data?: ProductRecord | LocaleProduct; // backend may return one of these
+};

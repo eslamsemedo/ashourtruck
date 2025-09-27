@@ -1,12 +1,7 @@
 import ProductDetails, { ProductData } from "@/components/ProductDetails";
+import { LocaleProduct } from "@/types/products";
 
-type RawTier = { from: string; to?: string; equal?: string; total?: string };
-type RawLang = {
-  id: number; admin_id: number; category: string; name: string; image: string;
-  price_each: string; description: string; weight: string;
-  created_at: string; updated_at: string; quantity: RawTier[];
-};
-type ApiRes = { status: string; message: Record<string, string>; data: { en: RawLang; ar: RawLang } };
+type ApiRes = { status: string; message: Record<string, string>; data: { en: LocaleProduct; ar: LocaleProduct } };
 
 function money(n?: string) { const x = Number.parseFloat(n || "0"); return Number.isFinite(x) ? x : 0; }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
@@ -75,8 +75,9 @@ export default function CartPage() {
   const selectedTransport = React.useMemo(() => {
     return transports.find((t, idx) => makeTKey(t, idx) === selectedTransportKey) ?? null;
   }, [transports, selectedTransportKey, makeTKey]);
-  // ---------------------------------
-  React.useEffect(() => {
+
+  // Load transport options from API
+  useEffect(() => {
     let ignore = false;
     (async () => {
       try {

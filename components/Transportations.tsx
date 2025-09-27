@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Search,
   Plus,
@@ -15,6 +15,9 @@ import {
   editOrAddAdminTransportations,
   getAdminTransportations,
 } from "@/lib/api";
+import { ApiCreateOrUpdate, ApiList, Transport } from "@/types/transport";
+import { num } from "@/lib/helper";
+import z from "zod";
 
 /** ============================
  * Admin — Transportations
@@ -26,32 +29,8 @@ import {
  * - Table shows ONLY: Zone | Weight | Price
  * ============================ */
 
-type Transport = {
-  id: number;
-  admin_id: number;
-  zone: string;
-  weight_kg: string; // "500.000"
-  price: string;     // "120.00"
-  created_at: string;
-  updated_at: string;
-  weight: string;    // "500 kg"
-};
 
-interface ApiList {
-  status: string;
-  message: Record<string, string>;
-  data: { data: Transport[]; total: number };
-}
-interface ApiCreateOrUpdate {
-  status: string;
-  message: Record<string, string>;
-  data?: Transport;
-}
 
-const money = (n: string) =>
-  Number.isFinite(parseFloat(n)) ? parseFloat(n) : 0;
-const kg = (n: string) =>
-  Number.isFinite(parseFloat(n)) ? parseFloat(n) : 0;
 
 export default function AdminTransportations({
   initialLang = "en" as "en" | "ar",
@@ -76,23 +55,28 @@ export default function AdminTransportations({
   const [price, setPrice] = React.useState("");
   const [editingId, setEditingId] = React.useState<number | null>(null); // null = add, number = edit
 
-  // Load data once
-  React.useEffect(() => {
-    const ctrl = new AbortController();
+  // Initial load and reload after delete
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         setLoading(true);
         const json = (await getAdminTransportations()) as ApiList;
+        if (cancelled) return;
         setRecords(json.data.data || []);
         setTotal(json.data.total || 0);
         setError(null);
       } catch (e: any) {
-        if (e.name !== "AbortError") setError(e?.message || "Failed to load");
+        if (!cancelled) {
+          const msg =
+            e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error";
+          setError(msg); // ✅ pass a string
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-    return () => ctrl.abort();
+    return () => { cancelled = true; };
   }, []);
 
   // Filter for search
@@ -152,11 +136,29 @@ export default function AdminTransportations({
   }
 
   function validateTransportationFields(): string | null {
-    if (!zone.trim()) return t("Zone is required.", "المنطقة مطلوبة.");
-    if (!weightKg || isNaN(Number(weightKg)))
-      return t("Weight must be a number.", "يجب أن يكون الوزن رقمًا.");
-    if (!price || isNaN(Number(price)))
-      return t("Price must be a number.", "يجب أن يكون السعر رقمًا.");
+
+    const transportationSchema = z.object({
+      zone: z.string().min(1, { message: "Zone is required." }), // Ensure that zone is a non-empty string
+      weightKg: z
+        .string()
+        .refine((value) => !isNaN(Number(value)), { message: "Weight must be a number." }) // Validate that weightKg is a number
+        .min(1, { message: "Weight must be a positive number." }), // Ensure weight is greater than 0
+      price: z
+        .string()
+        .refine((value) => !isNaN(Number(value)), { message: "Price must be a number." }) // Validate that price is a number
+        .min(1, { message: "Price must be greater than 0." }), // Ensure price is greater than 0
+    });
+
+    // Validate the fields against the schema
+    const result = transportationSchema.safeParse({ zone, weightKg, price });
+
+    if (!result.success) {
+      // Return the error message from the validation schema
+      const firstError = JSON.parse(result.error.message)[0].message;
+      return firstError || t("Invalid input.", "إدخال غير صالح.");
+    }
+
+    // If validation passes, return null (no error)
     return null;
   }
 
@@ -185,8 +187,8 @@ export default function AdminTransportations({
       typeof (raw as any).price === "number"
         ? (raw as any).price.toFixed(2)
         : typeof (raw as any).price === "string"
-        ? Number((raw as any).price).toFixed(2)
-        : undefined;
+          ? Number((raw as any).price).toFixed(2)
+          : undefined;
 
     if (raw.id == null || raw.zone == null) return undefined;
 
@@ -321,15 +323,15 @@ export default function AdminTransportations({
               />
             </div>
           </div>
-            <div className="md:col-span-1 flex items-center text-sm text-slate-500">
-              {t("Total:", "الإجمالي:")} {total}
-            </div>
-            <button
-              onClick={openAddModal}
-              className="inline-flex max-w-[150px] col-span-2 items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
-            >
-              <Plus className="h-4 w-4" /> {t("Add transport", "إضافة شحن")}
-            </button>
+          <div className="md:col-span-1 flex items-center text-sm text-slate-500">
+            {t("Total:", "الإجمالي:")} {total}
+          </div>
+          <button
+            onClick={openAddModal}
+            className="inline-flex max-w-[150px] col-span-2 items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow"
+          >
+            <Plus className="h-4 w-4" /> {t("Add transport", "إضافة شحن")}
+          </button>
         </div>
 
         {/* Table — ONLY Zone | Weight | Price */}
@@ -369,10 +371,10 @@ export default function AdminTransportations({
                         {r.zone}
                       </td>
                       <td className="px-5 py-4 text-slate-700">
-                        {kg(r.weight_kg).toFixed(0)}
+                        {num(r.weight_kg).toFixed(0)}
                       </td>
                       <td className="px-5 py-4 font-semibold">
-                        ${money(r.price).toFixed(2)}
+                        ${num(r.price).toFixed(2)}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">

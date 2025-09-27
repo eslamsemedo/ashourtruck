@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Loader2,
   Pencil,
@@ -9,7 +9,9 @@ import {
   X,
   Globe2, // 👈 added
 } from "lucide-react";
-import { changeOrderStatus } from "@/lib/api";
+import { changeOrderStatus, getAdminOrders } from "@/lib/api";
+import { ApiList, Order } from "@/types/orders";
+import { fmtDate } from "@/lib/helper";
 
 /** ============================
  * Admin — Orders Table
@@ -20,54 +22,8 @@ import { changeOrderStatus } from "@/lib/api";
  * - Language toggle button (EN/AR)
  * ============================ */
 
-type OrderItem = {
-  id: number;
-  name: string;
-  qty: number;
-  unit_price: string;
-  line_total: string;
-  image: string;
-};
 
-type Order = {
-  id: number;
-  currency: string;
-  subtotal: string;
-  discount: string;
-  shipping: string;
-  tax: string;
-  total: string;
-  customer_first_name: string;
-  customer_last_name: string;
-  customer_email: string;
-  customer_phone: string;
-  customer_address_line1: string;
-  customer_address_line2: string;
-  customer_city: string;
-  customer_state: string;
-  customer_postal_code: string;
-  customer_country: string;
-  items: OrderItem[];
-  status: string;
-  created_at: string;
-  updated_at: string;
-  transportation_zone: string | null;
-  transportation_weight: string | null;
-  transportation_price: string | null;
-};
 
-export type ApiList = {
-  status: string;
-  message: Record<string, string>;
-  data: Order[];
-};
-
-const API =
-  "https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/admin/orders";
-
-// ⚠️ For production, don’t keep tokens client-side.
-const TOKEN =
-  "9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a";
 
 const STATUSES = ["pending", "confirmed", "paid", "cancelled", "refunded"] as const;
 const STATUS_FILTERS = [
@@ -106,19 +62,13 @@ export default function AdminOrders() {
   useEffect(() => {
     let cancelled = false;
 
-    const fetchOrders = async () => {
+    (async () => {
       try {
         setLoading(true);
-        const response = await fetch(API, {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        });
-        const json = (await response.json()) as ApiList;
-        if (!cancelled) {
-          setOrders(json.data || []);
-          setError(null);
-        }
+        const json = await getAdminOrders() as ApiList;
+        if (cancelled) return;
+        setOrders(json.data || []);
+        setError(null);
       } catch (e: unknown) {
         if (!cancelled) {
           setError(t("Failed to fetch orders.", "فشل في جلب الطلبات."));
@@ -126,9 +76,7 @@ export default function AdminOrders() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
-
-    fetchOrders();
+    })();
 
     return () => {
       cancelled = true;
@@ -137,7 +85,7 @@ export default function AdminOrders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredOrders = React.useMemo(() => {
+  const filteredOrders = useMemo(() => {
     let arr = orders.slice();
 
     if (statusFilter !== "all") {
@@ -155,16 +103,6 @@ export default function AdminOrders() {
 
     return arr;
   }, [orders, statusFilter, search]);
-
-  const fmtDate = (iso?: string) => {
-    if (!iso) return "—";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleString();
-    } catch {
-      return iso ?? "—";
-    }
-  };
 
   const handleReviewItems = (order: Order) => {
     setSelectedOrder(order);
@@ -190,19 +128,6 @@ export default function AdminOrders() {
     setUpdatingId(orderId);
 
     try {
-      // Adjust endpoint/method to match your API if different
-      // const res = await fetch(`${API}/${orderId}`, {
-      //   method: "PATCH",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     Authorization: `Bearer ${TOKEN}`,
-      //   },
-      //   body: JSON.stringify({ status: newStatus }),
-      // });
-
-      // if (!res.ok) {
-      //   throw new Error(`Failed to update status: ${res.status}`);
-      // }
       await changeOrderStatus(orderId, newStatus);
       setError(null);
     } catch (err) {

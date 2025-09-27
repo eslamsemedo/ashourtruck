@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Plus,
@@ -9,10 +9,7 @@ import {
   Trash2,
   Globe2,
   X,
-  Tag,
-  Layers,
-  LogOut,
-  ArrowRight,
+  Tag
 } from "lucide-react";
 
 /** ============================
@@ -25,100 +22,13 @@ import {
  * - Light rounded admin theme
  * ============================ */
 
-type QuantityTier = { from: string; to?: string; equal?: string; total?: string };
-
-type LangProduct = {
-  id: number;
-  admin_id: number;
-  category: string;
-  name: string;
-  image: string;
-  price_each: string; // "50.00"
-  description: string;
-  weight: string;     // "0.500"
-  created_at: string;
-  updated_at: string;
-  quantity?: QuantityTier[];
-};
-
-type RawProduct = { en: LangProduct; ar: LangProduct };
-
-export type ApiList = {
-  status: string;
-  message: Record<string, string>;
-  data: {
-    data: RawProduct[];
-    total: number;
-  };
-};
-
-type ApiCreateOrUpdate = {
-  status: string;
-  message: Record<string, string>;
-  data?: RawProduct | LangProduct; // backend may return one of these
-};
-
-type Product = {
-  id: number;
-  category: string;
-  name: string;
-  image: string;
-  priceEach: number;
-  description: string;
-  weight: number;
-  createdAt: string;
-  updatedAt: string;
-  tiers: QuantityTier[]; // normalized tiers (0..3)
-};
-// type Product = {
-//   id: number | string;
-//   category: string;
-//   name: string;
-//   image?: string;
-//   priceEach: number;
-//   description?: string;
-//   weight: number;
-//   createdAt: string;
-//   updatedAt: string;
-//   tiers: Array<{ from?: number; to?: number; equal?: number; total?: number }>;
-// };
-
-const API =
-  "https://mediumaquamarine-loris-592285.hostingersite.com/api/v1/admin/products";
-
-// ⚠️ For production, don’t keep tokens client-side.
-const TOKEN =
-  "9|50hnEZPE0X7WCc5gIAcERnscQ3eJLNKOjZKunwErc801516a";
-
 
 import { deleteAdminProduct, editOrAddAdminProduct, getAdminProduct } from "@/lib/api";
+import z from "zod";
+import { ApiCreateOrUpdate, ApiPayload, LocaleProduct, ProductRecord, QuantityTier } from "@/types/products";
+import { fmtDate, fmtTier, formatDate, normalize } from "@/lib/helper";
 
-const money = (n?: string) => {
-  const x = Number.parseFloat(n || "0");
-  return Number.isFinite(x) ? x : 0;
-};
-const num = (n?: string) => {
-  const x = Number.parseFloat(n || "0");
-  return Number.isFinite(x) ? x : 0;
-};
 
-function normalize(raw: RawProduct[], lang: "en" | "ar"): Product[] {
-  return raw.map((r) => {
-    const p = r[lang];
-    return {
-      id: p.id,
-      category: (p.category || "").trim(),
-      name: p.name,
-      image: p.image,
-      priceEach: money(p.price_each),
-      description: p.description,
-      weight: num(p.weight),
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
-      tiers: Array.isArray(p.quantity) ? p.quantity.slice(0, 3) : [],
-    };
-  });
-}
 interface prop {
   initialLang: "en" | "ar",
 }
@@ -127,55 +37,52 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
   const [lang, setLang] = React.useState<"en" | "ar">(initialLang);
 
   // data
-  const [loading, setLoading] = React.useState(true);
-  const [pageload, setPageload] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [records, setRecords] = React.useState<Product[]>([]);
-  const [total, setTotal] = React.useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [records, setRecords] = useState<LocaleProduct[]>([]);
+  const [total, setTotal] = useState(0);
 
   // search + filters
-  const [search, setSearch] = React.useState("");
-  const [activeCats, setActiveCats] = React.useState<string[]>([]);
-  // const [priceMin, setPriceMin] = React.useState<string>("");
-  // const [priceMax, setPriceMax] = React.useState<string>("");
+  const [search, setSearch] = useState("");
+  const [activeCats, setActiveCats] = useState<string[]>([]);
 
   // modal form (add/edit)
-  const [open, setOpen] = React.useState(false);
-  const [submitting, setSubmitting] = React.useState(false);
-  const [formErr, setFormErr] = React.useState<string | null>(null);
-  const [editingId, setEditingId] = React.useState<number | null>(null);
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formErr, setFormErr] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   // form fields (product)
-  const [fCategory, setFCategory] = React.useState("");
-  const [fName, setFName] = React.useState("");
-  const [fImage, setFImage] = React.useState("");
-  const [fPriceEach, setFPriceEach] = React.useState("");
-  const [fDescription, setFDescription] = React.useState("");
-  const [fWeight, setFWeight] = React.useState("");
+  const [fCategory, setFCategory] = useState("");
+  const [fName, setFName] = useState("");
+  const [fImage, setFImage] = useState("");
+  const [fPriceEach, setFPriceEach] = useState("");
+  const [fDescription, setFDescription] = useState("");
+  const [fWeight, setFWeight] = useState("");
 
   // form fields (tiers 1..3)
-  const [t1_from, setT1_from] = React.useState("");
-  const [t1_to, setT1_to] = React.useState("");
-  const [t1_equal, setT1_equal] = React.useState("");
+  const [t1_from, setT1_from] = useState("");
+  const [t1_to, setT1_to] = useState("");
+  const [t1_equal, setT1_equal] = useState("");
 
-  const [t2_from, setT2_from] = React.useState("");
-  const [t2_to, setT2_to] = React.useState("");
-  const [t2_equal, setT2_equal] = React.useState("");
+  const [t2_from, setT2_from] = useState("");
+  const [t2_to, setT2_to] = useState("");
+  const [t2_equal, setT2_equal] = useState("");
 
-  const [t3_from, setT3_from] = React.useState("");
-  const [t3_to, setT3_to] = React.useState("");
-  const [t3_total, setT3_total] = React.useState("");
+  const [t3_from, setT3_from] = useState("");
+  const [t3_to, setT3_to] = useState("");
+  const [t3_total, setT3_total] = useState("");
 
-  const [apiData, setApiData] = React.useState<ApiList>()
+  const [apiData, setApiData] = useState<ApiPayload>()
 
   // Load once / on language switch
-  React.useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
         setLoading(true);
-        const json = await getAdminProduct() as ApiList;
+        const json = await getAdminProduct() as ApiPayload;
         if (cancelled) return;
         setApiData(json);
         setRecords(normalize(json.data.data ?? [], lang));
@@ -195,7 +102,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
     return () => { cancelled = true; };
   }, []);
 
-  const categories = React.useMemo(() => {
+  const categories = useMemo(() => {
     const set = new Set<string>();
     records.forEach((p) => set.add(p.category.trim().toLowerCase()));
     return Array.from(set).map((key) => ({
@@ -204,7 +111,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
     }));
   }, [records]);
 
-  const filtered = React.useMemo(() => {
+  const filtered = useMemo(() => {
     let arr = records.slice();
 
     if (activeCats.length) {
@@ -220,12 +127,6 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
 
       );
     }
-
-    // const min = priceMin.trim() ? Number(priceMin) : null;
-    // const max = priceMax.trim() ? Number(priceMax) : null;
-    // if (min !== null && !Number.isNaN(min)) arr = arr.filter((p) => p.priceEach >= min);
-    // if (max !== null && !Number.isNaN(max)) arr = arr.filter((p) => p.priceEach <= max);
-
     return arr;
   }, [records, activeCats, search]);
 
@@ -241,42 +142,23 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
     setFormErr(null);
   }
 
-  function fmtDate(iso?: string) {
-    if (!iso) return "—";
-    try {
-      const d = new Date(iso);
-      return d.toLocaleString(); // you can localize further if needed
-    } catch {
-      return iso ?? "—";
-    }
-  }
-
-  function fmtTier(t: { from?: string; to?: string; equal?: string; total?: string }) {
-    const from = t.from ?? "";
-    const to = t.to ?? "";
-    // Some tiers use "equal", the last uses "total"
-    const price = t.equal ?? t.total ?? "";
-    const range = from && to ? `${from}–${to}` : from ? `${from}+` : to ? `≤${to}` : "-";
-    return `${range} = ${price}`;
-  }
-
   function openAdd() {
     setEditingId(null);
     resetForm();
     setOpen(true);
   }
 
-  function openEdit(p: Product) {
+  function openEdit(p: LocaleProduct) {
     setEditingId(p.id);
     setFCategory(p.category);
     setFName(p.name);
     setFImage(p.image);
-    setFPriceEach(p.priceEach.toFixed(2));
+    setFPriceEach(p.price_each);
     setFDescription(p.description);
-    setFWeight(p.weight.toFixed(3));
+    setFWeight(p.weight);
 
     // prefill tiers (map to 3 slots)
-    const [a, b, c] = p.tiers || [];
+    const [a, b, c] = p.quantity || [];
     setT1_from(a?.from ?? ""); setT1_to(a?.to ?? ""); setT1_equal(a?.equal ?? "");
     setT2_from(b?.from ?? ""); setT2_to(b?.to ?? ""); setT2_equal(b?.equal ?? "");
     setT3_from(c?.from ?? ""); setT3_to(c?.to ?? ""); setT3_total(c?.total ?? "");
@@ -325,31 +207,45 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
   }
 
   function validateFields() {
-    if (!fCategory || !fCategory.trim()) return t("Category is required.", "الفئة مطلوبة.");
-    if (!fName || !fName.trim()) return t("Name is required.", "الاسم مطلوب.");
 
-    const price = toFiniteNumber(fPriceEach);
-    if (price == null) return t("Price must be a number.", "يجب أن يكون السعر رقمًا.");
-    if (price <= 0) return t("Price must be positive.", "يجب أن يكون السعر موجبًا.");
+    const schema = z.object({
+      fCategory: z.string().min(1, { message: t("Category is required.", "الفئة مطلوبة.") }),
+      fName: z.string().min(1, { message: t("Name is required.", "الاسم مطلوب.") }),
+      fPriceEach: z.number().min(0.01, { message: t("Price must be positive.", "يجب أن يكون السعر موجبًا.") }).refine((val) => val > 0, {
+        message: t("Price must be a positive number.", "يجب أن يكون السعر رقمًا موجبًا."),
+      }),
+      fWeight: z.number().min(0.01, { message: t("Weight must be positive.", "يجب أن يكون الوزن موجبًا.") }).refine((val) => val > 0, {
+        message: t("Weight must be a positive number.", "يجب أن يكون الوزن رقمًا موجبًا."),
+      }),
+    });
 
-    const weight = toFiniteNumber(fWeight);
-    if (weight == null) return t("Weight must be a number.", "يجب أن يكون الوزن رقمًا.");
-    if (weight <= 0) return t("Weight must be positive.", "يجب أن يكون الوزن موجبًا.");
+    const parsed = schema.safeParse({
+      fCategory,
+      fName,
+      fPriceEach,
+      fWeight,
+    });
+
+    if (!parsed.success) {
+      // Return the error message from the validation schema
+      const firstError = JSON.parse(parsed.error.message)[0].message;
+      return firstError || t("Invalid input.", "إدخال غير صالح.");
+    }
 
     return null;
   }
 
-  function mapApiToProduct(input: unknown, lang: "en" | "ar"): Product | null {
+  function mapApiToProduct(input: unknown, lang: "en" | "ar"): LocaleProduct | null {
     if (!input || typeof input !== "object") return null;
 
     // Case 1: multilingual object (has en + ar). Use your existing normalize()
     if ("en" in (input as any) && "ar" in (input as any)) {
-      const normalized = normalize([input as RawProduct], lang);
+      const normalized = normalize([input as ProductRecord], lang);
       return normalized?.[0] ?? null;
     }
 
-    // Case 2: LangProduct
-    const p = input as Partial<LangProduct>;
+    // Case 2: LocaleProduct
+    const p = input as Partial<LocaleProduct>;
     if (p.id == null || p.category == null || p.name == null || p.image == null) return null;
 
     const priceEach = toFiniteNumber(p.price_each);
@@ -358,15 +254,16 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
 
     return {
       id: p.id,
+      admin_id: p.admin_id || 0,
       category: p.category,
       name: p.name,
       image: p.image,
-      priceEach,
+      price_each: priceEach.toFixed(2),
       description: p.description ?? "",
-      weight,
-      createdAt: p.created_at ?? new Date().toISOString(),
-      updatedAt: p.updated_at ?? new Date().toISOString(),
-      tiers: p.quantity ?? [],
+      weight: weight.toFixed(3),
+      created_at: p.created_at ?? new Date().toISOString(),
+      updated_at: p.updated_at ?? new Date().toISOString(),
+      quantity: p.quantity ?? [],
     };
   }
 
@@ -403,20 +300,21 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
 
       if (isEdit) {
         const baseCreatedAt =
-          records.find((r) => r.id === editingId)?.createdAt ?? nowISO;
+          records.find((r) => r.id === editingId)?.created_at ?? nowISO;
 
-        const updatedLocal: Product =
+        const updatedLocal: LocaleProduct =
           returned ?? {
             id: editingId!,
+            admin_id: 0, // unknown
             category: fCategory.trim(),
             name: fName.trim(),
             image: fImage?.trim(),
-            priceEach: toFiniteNumber(fPriceEach)!,
+            price_each: toFiniteNumber(fPriceEach)!.toFixed(2),
             description: fDescription?.trim() ?? "",
-            weight: toFiniteNumber(fWeight)!,
-            createdAt: baseCreatedAt,
-            updatedAt: nowISO,
-            tiers: buildTiers(),
+            weight: toFiniteNumber(fWeight)!.toFixed(3),
+            created_at: baseCreatedAt,
+            updated_at: nowISO,
+            quantity: buildTiers(),
           };
 
         setRecords((prev) =>
@@ -428,18 +326,19 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
             ? crypto.getRandomValues(new Uint32Array(1))[0] // secure random 32-bit number
             : Date.now();
 
-        const createdLocal: Product =
+        const createdLocal: LocaleProduct =
           returned ?? {
-            id: tempId,
+            id: editingId!,
+            admin_id: 0, // unknown
             category: fCategory.trim(),
             name: fName.trim(),
             image: fImage?.trim(),
-            priceEach: toFiniteNumber(fPriceEach)!,
+            price_each: toFiniteNumber(fPriceEach)!.toFixed(2),
             description: fDescription?.trim() ?? "",
-            weight: toFiniteNumber(fWeight)!,
-            createdAt: nowISO,
-            updatedAt: nowISO,
-            tiers: buildTiers(),
+            weight: toFiniteNumber(fWeight)!.toFixed(3),
+            created_at: nowISO,
+            updated_at: nowISO,
+            quantity: buildTiers(),
           };
 
         setRecords((prev) => [createdLocal, ...prev]);
@@ -482,7 +381,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
   // Silent reload that doesn't show the big loading UI
   async function silentReload() {
     try {
-      const json = (await getAdminProduct()) as ApiList;
+      const json = (await getAdminProduct()) as ApiPayload;
       setApiData(json);
       setRecords(normalize(json.data.data || [], lang));
       setTotal(json.data.total || 0);
@@ -519,7 +418,7 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
               <Globe2 className="h-4 w-4" /> {lang === "en" ? "العربية" : "English"}
             </button>
 
-            
+
 
             {/* New Transportation Button */}
             {/* <button
@@ -656,12 +555,12 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
                           <Tag className="h-3 w-3" /> {p.category || "-"}
                         </span>
                       </td>
-                      <td className="px-5 py-4 font-semibold">${p.priceEach.toFixed(2)}</td>
-                      <td className="px-5 py-4">{p.weight.toFixed(3)}</td>
+                      <td className="px-5 py-4 font-semibold">${p.price_each}</td>
+                      <td className="px-5 py-4">{p.weight}</td>
                       <td className="px-5 py-4">
-                        {p.tiers && p.tiers.length > 0 ? (
+                        {p.quantity && p.quantity.length > 0 ? (
                           <div className="flex flex-wrap gap-1.5 min-w-[190px]">
-                            {p.tiers.map((t, idx) => (
+                            {p.quantity.map((t, idx) => (
                               <span
                                 key={idx}
                                 className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700"
@@ -679,11 +578,11 @@ export default function AdminProducts({ initialLang = "en" as "en" | "ar" }: pro
                           <span className="text-xs text-slate-400">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-slate-600">
-                        {fmtDate(p.createdAt)}
+                      <td className="px-5 py-4 text-slate-600 min-w-[100px]">
+                        {formatDate(p.created_at, lang)}
                       </td>
-                      <td className="px-5 py-4 text-slate-600">
-                        {fmtDate(p.updatedAt)}
+                      <td className="px-5 py-4 text-slate-600 min-w-[100px]">
+                        {formatDate(p.updated_at, lang)}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
